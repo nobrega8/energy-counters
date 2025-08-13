@@ -1,5 +1,3 @@
 include README.md
 include requirements.txt
-include example.py
-include test_library.py
 recursive-include nemotek_counters *.py

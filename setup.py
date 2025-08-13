@@ -13,12 +13,12 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="nemotek-counters",
     version="1.0.0",
-    author="Nemotek GTC",
-    author_email="info@nemotek.pt",
+    author="Nemotek",
+    author_email="afonso.nobrega@nemotek.pt",
     description="A Python library for reading data from various electrical energy counters",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Nemotek-GTC/contadores_Carlo-Gavazzi",
+    url="https://github.com/Nemotek-GTC/contadores«",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -37,7 +37,7 @@ setup(
     install_requires=requirements,
     keywords="energy meters, counters, modbus, carlo gavazzi, lovato, schneider",
     project_urls={
-        "Bug Reports": "https://github.com/Nemotek-GTC/contadores_Carlo-Gavazzi/issues",
-        "Source": "https://github.com/Nemotek-GTC/contadores_Carlo-Gavazzi",
+        "Bug Reports": "https://github.com/Nemotek-GTC/contadores/issues",
+        "Source": "https://github.com/Nemotek-GTC/contadores",
     },
 )
