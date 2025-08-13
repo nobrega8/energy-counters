@@ -8,19 +8,19 @@ Available counters:
 """
 
 from .em530 import (
-    ConfiguracaoContador,
-    ConfiguracaoModbus,
-    ConfiguracaoModbusTCP,
-    ConfiguracaoModbusRTU,
-    GestorErrosModbus,
-    ColectorDadosEM530
+    CounterConfiguration,
+    ModbusConfiguration,
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    ModbusErrorManager,
+    EM530DataCollector
 )
 
 __all__ = [
-    'ConfiguracaoContador',
-    'ConfiguracaoModbus',
-    'ConfiguracaoModbusTCP',
-    'ConfiguracaoModbusRTU', 
-    'GestorErrosModbus',
-    'ColectorDadosEM530'
+    'CounterConfiguration',
+    'ModbusConfiguration',
+    'ModbusTCPConfiguration',
+    'ModbusRTUConfiguration', 
+    'ModbusErrorManager',
+    'EM530DataCollector'
 ]

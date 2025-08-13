@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Recolha de dados do contador Carlo Gavazzi EM530 via Modbus RTU
-Baseado no Node-Red do @PedroFerreira
+Data collection from Carlo Gavazzi EM530 counter via Modbus RTU
+Based on Node-Red implementation by @PedroFerreira
 """
 
 import time
@@ -15,7 +15,7 @@ from pymodbus.client.serial import ModbusSerialClient
 from pymodbus.client.tcp import ModbusTcpClient
 from pymodbus.exceptions import ModbusException, ConnectionException
 
-# Configuração do registo de eventos
+# Event logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -24,381 +24,380 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ConfiguracaoContador:
-    """Configuração do contador"""
-    id_contador: int
-    id_unidade: int
-    nome_contador: str
-    id_empresa: str
+class CounterConfiguration:
+    """Counter configuration"""
+    counter_id: int
+    unit_id: int
+    counter_name: str
+    company_id: str
 
 
 @dataclass
-class ConfiguracaoModbusTCP:
-    """Configuração da ligação Modbus TCP"""
+class ModbusTCPConfiguration:
+    """Modbus TCP connection configuration"""
     host: str = "192.168.1.100"
-    porta: int = 502
+    port: int = 502
     timeout: float = 4.0
 
 
 @dataclass
-class ConfiguracaoModbusRTU:
-    """Configuração da ligação Modbus RTU"""
-    porta: str = "/dev/ttyAMA0"
-    velocidade: int = 9600
-    bits_dados: int = 8
-    paridade: str = 'N'
-    bits_paragem: int = 1
+class ModbusRTUConfiguration:
+    """Modbus RTU connection configuration"""
+    port: str = "/dev/ttyAMA0"
+    baudrate: int = 9600
+    data_bits: int = 8
+    parity: str = 'N'
+    stop_bits: int = 1
     timeout: float = 2.0
 
 
 @dataclass
-class ConfiguracaoModbus:
-    """Configuração da ligação Modbus (compatibilidade com versões anteriores)"""
-    porta: str = "/dev/ttyAMA0"
-    velocidade: int = 9600
-    bits_dados: int = 8
-    paridade: str = 'N'
-    bits_paragem: int = 1
+class ModbusConfiguration:
+    """Modbus connection configuration (backward compatibility)"""
+    port: str = "/dev/ttyAMA0"
+    baudrate: int = 9600
+    data_bits: int = 8
+    parity: str = 'N'
+    stop_bits: int = 1
     timeout: float = 2.0
 
 
-class GestorErrosModbus:
-    """Gestor de erros Modbus baseado no subflow Node-RED"""
+class ModbusErrorManager:
+    """Modbus error manager based on Node-RED subflow"""
 
-    def __init__(self, nome_contador: str, id_empresa: str):
-        self.nome_contador = nome_contador
-        self.id_empresa = id_empresa
-        self.contagem_erros = 0
-        self.ultimo_estado_erro = False
+    def __init__(self, counter_name: str, company_id: str):
+        self.counter_name = counter_name
+        self.company_id = company_id
+        self.error_count = 0
+        self.last_error_state = False
 
-    def processar_erro(self, tem_erro: bool) -> Optional[Dict[str, Any]]:
+    def process_error(self, has_error: bool) -> Optional[Dict[str, Any]]:
         """
-        Processa erro seguindo a lógica do Node-RED:
-        - Incrementa contador se há erro
-        - Reinicia se não há erro
-        - Considera erro apenas se contagem > 2
+        Process error following Node-RED logic:
+        - Increment counter if there's an error
+        - Reset if there's no error
+        - Consider error only if count > 2
         """
-        if tem_erro:
-            self.contagem_erros += 1
+        if has_error:
+            self.error_count += 1
         else:
-            self.contagem_erros = 0
+            self.error_count = 0
 
-        estado_erro_actual = self.contagem_erros > 2
+        current_error_state = self.error_count > 2
 
-        # Reportar por exceção - só reporta se mudou de estado
-        if estado_erro_actual != self.ultimo_estado_erro:
-            self.ultimo_estado_erro = estado_erro_actual
-            return self._criar_mensagem_erro(estado_erro_actual)
+        # Report by exception - only report if state changed
+        if current_error_state != self.last_error_state:
+            self.last_error_state = current_error_state
+            return self._create_error_message(current_error_state)
 
         return None
 
-    def _criar_mensagem_erro(self, e_erro: bool) -> Dict[str, Any]:
-        """Cria mensagem de erro baseada no Node-RED"""
+    def _create_error_message(self, is_error: bool) -> Dict[str, Any]:
+        """Create error message based on Node-RED"""
         timestamp = datetime.now().isoformat()
 
-        if e_erro:
-            topico = f"{self.id_empresa} Erro Comunicação {self.nome_contador} INACTIVO"
-            mensagem = f"{self.id_empresa} comunicação com o contador {self.nome_contador} está INACTIVA desde {timestamp}"
+        if is_error:
+            topic = f"{self.company_id} Communication Error {self.counter_name} INACTIVE"
+            message = f"{self.company_id} communication with counter {self.counter_name} is INACTIVE since {timestamp}"
         else:
-            topico = f"{self.id_empresa} Erro Comunicação {self.nome_contador} Restaurado"
-            mensagem = f"{self.id_empresa} comunicação com o contador {self.nome_contador} foi restaurada às {timestamp}"
+            topic = f"{self.company_id} Communication Error {self.counter_name} Restored"
+            message = f"{self.company_id} communication with counter {self.counter_name} was restored at {timestamp}"
 
         return {
-            "topico": topico,
-            "mensagem": mensagem,
+            "topic": topic,
+            "message": message,
             "timestamp": timestamp,
-            "estado_erro": e_erro
+            "error_state": is_error
         }
 
 
-class ColectorDadosEM530:
-    """Recolha de dados do Carlo Gavazzi EM530"""
+class EM530DataCollector:
+    """Carlo Gavazzi EM530 data collection"""
 
-    def __init__(self, config_contador: ConfiguracaoContador, 
-                 config_modbus: Optional[ConfiguracaoModbus] = None,
-                 config_modbus_tcp: Optional[ConfiguracaoModbusTCP] = None,
-                 config_modbus_rtu: Optional[ConfiguracaoModbusRTU] = None):
-        self.config_contador = config_contador
-        self.config_modbus = config_modbus  # Para compatibilidade com versões anteriores
-        self.config_modbus_tcp = config_modbus_tcp
-        self.config_modbus_rtu = config_modbus_rtu
-        self.cliente = None
-        self.tipo_conexao = None
-        self.gestor_erros = GestorErrosModbus(
-            config_contador.nome_contador,
-            config_contador.id_empresa
+    def __init__(self, counter_config: CounterConfiguration, 
+                 modbus_config: Optional[ModbusConfiguration] = None,
+                 modbus_tcp_config: Optional[ModbusTCPConfiguration] = None,
+                 modbus_rtu_config: Optional[ModbusRTUConfiguration] = None):
+        self.counter_config = counter_config
+        self.modbus_config = modbus_config  # For backward compatibility
+        self.modbus_tcp_config = modbus_tcp_config
+        self.modbus_rtu_config = modbus_rtu_config
+        self.client = None
+        self.connection_type = None
+        self.error_manager = ModbusErrorManager(
+            counter_config.counter_name,
+            counter_config.company_id
         )
 
-        # Converter configuração legacy para RTU se fornecida
-        if config_modbus and not config_modbus_rtu:
-            self.config_modbus_rtu = ConfiguracaoModbusRTU(
-                porta=config_modbus.porta,
-                velocidade=config_modbus.velocidade,
-                bits_dados=config_modbus.bits_dados,
-                paridade=config_modbus.paridade,
-                bits_paragem=config_modbus.bits_paragem,
-                timeout=config_modbus.timeout
+        # Convert legacy configuration to RTU if provided
+        if modbus_config and not modbus_rtu_config:
+            self.modbus_rtu_config = ModbusRTUConfiguration(
+                port=modbus_config.port,
+                baudrate=modbus_config.baudrate,
+                data_bits=modbus_config.data_bits,
+                parity=modbus_config.parity,
+                stop_bits=modbus_config.stop_bits,
+                timeout=modbus_config.timeout
             )
 
-        # Validar que pelo menos uma configuração foi fornecida
-        if not self.config_modbus_tcp and not self.config_modbus_rtu:
-            raise ValueError("Deve fornecer pelo menos uma configuração Modbus (TCP, RTU ou legacy)")
+        # Validate that at least one configuration was provided
+        if not self.modbus_tcp_config and not self.modbus_rtu_config:
+            raise ValueError("Must provide at least one Modbus configuration (TCP, RTU or legacy)")
 
-    def ligar(self) -> bool:
-        """Estabelece ligação Modbus TCP ou RTU"""
+    def connect(self) -> bool:
+        """Establish Modbus TCP or RTU connection"""
         try:
-            # Tentar TCP primeiro, se disponível
-            if self.config_modbus_tcp:
-                return self._ligar_tcp()
-            elif self.config_modbus_rtu:
-                return self._ligar_rtu()
+            # Try TCP first, if available
+            if self.modbus_tcp_config:
+                return self._connect_tcp()
+            elif self.modbus_rtu_config:
+                return self._connect_rtu()
             
             return False
 
         except Exception as e:
-            logger.error(f"Erro ao ligar: {e}")
+            logger.error(f"Error connecting: {e}")
             return False
 
-    def _ligar_tcp(self) -> bool:
-        """Estabelece ligação Modbus TCP"""
+    def _connect_tcp(self) -> bool:
+        """Establish Modbus TCP connection"""
         try:
-            self.cliente = ModbusTcpClient(
-                host=self.config_modbus_tcp.host,
-                port=self.config_modbus_tcp.porta,
-                timeout=self.config_modbus_tcp.timeout
+            self.client = ModbusTcpClient(
+                host=self.modbus_tcp_config.host,
+                port=self.modbus_tcp_config.port,
+                timeout=self.modbus_tcp_config.timeout
             )
 
-            if self.cliente.connect():
-                self.tipo_conexao = "TCP"
-                logger.info(f"Ligado ao dispositivo Modbus TCP em {self.config_modbus_tcp.host}:{self.config_modbus_tcp.porta}")
+            if self.client.connect():
+                self.connection_type = "TCP"
+                logger.info(f"Connected to Modbus TCP device at {self.modbus_tcp_config.host}:{self.modbus_tcp_config.port}")
                 return True
             else:
-                logger.error("Falha ao ligar ao dispositivo Modbus TCP")
+                logger.error("Failed to connect to Modbus TCP device")
                 return False
 
         except Exception as e:
-            logger.error(f"Erro ao ligar TCP: {e}")
-            # Se TCP falhar, tentar RTU se disponível
-            if self.config_modbus_rtu:
-                return self._ligar_rtu()
+            logger.error(f"TCP connection error: {e}")
+            # If TCP fails, try RTU if available
+            if self.modbus_rtu_config:
+                return self._connect_rtu()
             return False
 
-    def _ligar_rtu(self) -> bool:
-        """Estabelece ligação Modbus RTU"""
+    def _connect_rtu(self) -> bool:
+        """Establish Modbus RTU connection"""
         try:
-            self.cliente = ModbusSerialClient(
+            self.client = ModbusSerialClient(
                 method='rtu',
-                port=self.config_modbus_rtu.porta,
-                baudrate=self.config_modbus_rtu.velocidade,
-                bytesize=self.config_modbus_rtu.bits_dados,
-                parity=self.config_modbus_rtu.paridade,
-                stopbits=self.config_modbus_rtu.bits_paragem,
-                timeout=self.config_modbus_rtu.timeout
+                port=self.modbus_rtu_config.port,
+                baudrate=self.modbus_rtu_config.baudrate,
+                bytesize=self.modbus_rtu_config.data_bits,
+                parity=self.modbus_rtu_config.parity,
+                stopbits=self.modbus_rtu_config.stop_bits,
+                timeout=self.modbus_rtu_config.timeout
             )
 
-            if self.cliente.connect():
-                self.tipo_conexao = "RTU"
-                logger.info(f"Ligado ao dispositivo Modbus RTU na porta {self.config_modbus_rtu.porta}")
+            if self.client.connect():
+                self.connection_type = "RTU"
+                logger.info(f"Connected to Modbus RTU device on port {self.modbus_rtu_config.port}")
                 return True
             else:
-                logger.error("Falha ao ligar ao dispositivo Modbus RTU")
+                logger.error("Failed to connect to Modbus RTU device")
                 return False
 
         except Exception as e:
-            logger.error(f"Erro ao ligar RTU: {e}")
+            logger.error(f"RTU connection error: {e}")
             return False
 
-    def desligar(self):
-        """Desliga do dispositivo Modbus"""
-        if self.cliente:
-            self.cliente.close()
-            logger.info(f"Desligado do dispositivo Modbus {self.tipo_conexao}")
+    def disconnect(self):
+        """Disconnect from Modbus device"""
+        if self.client:
+            self.client.close()
+            logger.info(f"Disconnected from Modbus {self.connection_type} device")
 
-    def ler_registos(self, endereco: int, quantidade: int) -> Optional[list]:
-        """Lê registos Modbus com tratamento de erros"""
+    def read_registers(self, address: int, count: int) -> Optional[list]:
+        """Read Modbus registers with error handling"""
         try:
-            if not self.cliente or not self.cliente.is_socket_open():
-                raise ConnectionException("Cliente não ligado")
+            if not self.client or not self.client.is_socket_open():
+                raise ConnectionException("Client not connected")
 
-            resultado = self.cliente.read_holding_registers(
-                address=endereco,
-                count=quantidade,
-                slave=self.config_contador.id_unidade
+            result = self.client.read_holding_registers(
+                address=address,
+                count=count,
+                slave=self.counter_config.unit_id
             )
 
-            if resultado.isError():
-                raise ModbusException(f"Erro na leitura: {resultado}")
+            if result.isError():
+                raise ModbusException(f"Read error: {result}")
 
-            return resultado.registers
+            return result.registers
 
         except Exception as e:
-            logger.error(f"Erro ao ler registos {endereco}-{endereco + quantidade - 1}: {e}")
+            logger.error(f"Error reading registers {address}-{address + count - 1}: {e}")
             return None
 
-    def recolher_dados(self) -> Optional[Dict[str, Any]]:
-        """Recolhe todos os dados seguindo a sequência do Node-RED"""
+    def collect_data(self) -> Optional[Dict[str, Any]]:
+        """Collect all data following Node-RED sequence"""
         timestamp = datetime.now().isoformat()
 
         try:
-            # Leitura 1: Endereço 0x0000, 64 registos (dados principais)
-            dados01 = self.ler_registos(0x0000, 64)
-            if dados01 is None:
-                self._processar_erro_comunicacao()
+            # Read 1: Address 0x0000, 64 registers (main data)
+            data01 = self.read_registers(0x0000, 64)
+            if data01 is None:
+                self._process_communication_error()
                 return None
 
-            # Leitura 2: Endereço 0x0056, 2 registos (energia aparente)
-            dados02 = self.ler_registos(0x0056, 2)
-            if dados02 is None:
-                self._processar_erro_comunicacao()
+            # Read 2: Address 0x0056, 2 registers (apparent energy)
+            data02 = self.read_registers(0x0056, 2)
+            if data02 is None:
+                self._process_communication_error()
                 return None
 
-            # Leitura 3: Endereço 0x0082, 6 registos (THD corrente)
-            dados03 = self.ler_registos(0x0082, 6)
-            if dados03 is None:
-                self._processar_erro_comunicacao()
+            # Read 3: Address 0x0082, 6 registers (current THD)
+            data03 = self.read_registers(0x0082, 6)
+            if data03 is None:
+                self._process_communication_error()
                 return None
 
-            # Leitura 4: Endereço 0x0092, 6 registos (THD tensão)
-            dados04 = self.ler_registos(0x0092, 6)
-            if dados04 is None:
-                self._processar_erro_comunicacao()
+            # Read 4: Address 0x0092, 6 registers (voltage THD)
+            data04 = self.read_registers(0x0092, 6)
+            if data04 is None:
+                self._process_communication_error()
                 return None
 
-            # Processa sucesso na comunicação
-            msg_erro = self.gestor_erros.processar_erro(False)
-            if msg_erro:
-                logger.info(f"Comunicação restaurada: {msg_erro['mensagem']}")
+            # Process communication success
+            error_msg = self.error_manager.process_error(False)
+            if error_msg:
+                logger.info(f"Communication restored: {error_msg['message']}")
 
-            # Formata dados conforme função Node-RED
-            dados_formatados = self._formatar_dados(dados01, dados02, dados03, dados04, timestamp)
-            return dados_formatados
+            # Format data according to Node-RED function
+            formatted_data = self._format_data(data01, data02, data03, data04, timestamp)
+            return formatted_data
 
         except Exception as e:
-            logger.error(f"Erro na recolha de dados: {e}")
-            self._processar_erro_comunicacao()
+            logger.error(f"Error collecting data: {e}")
+            self._process_communication_error()
             return None
 
-    def _processar_erro_comunicacao(self):
-        """Processa erro de comunicação"""
-        msg_erro = self.gestor_erros.processar_erro(True)
-        if msg_erro:
-            logger.warning(f"Erro de comunicação: {msg_erro['mensagem']}")
+    def _process_communication_error(self):
+        """Process communication error"""
+        error_msg = self.error_manager.process_error(True)
+        if error_msg:
+            logger.warning(f"Communication error: {error_msg['message']}")
 
-    def _formatar_dados(self, dados01: list, dados02: list, dados03: list, dados04: list, timestamp: str) -> Dict[
-        str, Any]:
+    def _format_data(self, data01: list, data02: list, data03: list, data04: list, timestamp: str) -> Dict[str, Any]:
         """
-        Formata os dados
+        Format data according to Node-RED function
         """
 
-        def combinar_registos(reg_alto: int, reg_baixo: int) -> int:
-            """Combina dois registos de 16 bits num valor de 32 bits"""
-            return (reg_alto << 16) + reg_baixo
+        def combine_registers(high_reg: int, low_reg: int) -> int:
+            """Combine two 16-bit registers into a 32-bit value"""
+            return (high_reg << 16) + low_reg
 
         return {
-            "idEmpresa": self.config_contador.id_empresa,
+            "companyId": self.counter_config.company_id,
             "timestamp": timestamp,
-            "idContador": str(self.config_contador.id_contador),
-            "nomeContador": self.config_contador.nome_contador,
+            "counterId": str(self.counter_config.counter_id),
+            "counterName": self.counter_config.counter_name,
 
-            # Tensões L-N (V)
-            "tensaoL1": round(combinar_registos(dados01[1], dados01[0]) * 0.1, 1),
-            "tensaoL2": round(combinar_registos(dados01[3], dados01[2]) * 0.1, 1),
-            "tensaoL3": round(combinar_registos(dados01[5], dados01[4]) * 0.1, 1),
+            # L-N Voltages (V)
+            "voltageL1": round(combine_registers(data01[1], data01[0]) * 0.1, 1),
+            "voltageL2": round(combine_registers(data01[3], data01[2]) * 0.1, 1),
+            "voltageL3": round(combine_registers(data01[5], data01[4]) * 0.1, 1),
 
-            # Tensões L-L (V)
-            "tensaoL12": round(combinar_registos(dados01[7], dados01[6]) * 0.1, 1),
-            "tensaoL23": round(combinar_registos(dados01[9], dados01[8]) * 0.1, 1),
-            "tensaoL31": round(combinar_registos(dados01[11], dados01[10]) * 0.1, 1),
+            # L-L Voltages (V)
+            "voltageL12": round(combine_registers(data01[7], data01[6]) * 0.1, 1),
+            "voltageL23": round(combine_registers(data01[9], data01[8]) * 0.1, 1),
+            "voltageL31": round(combine_registers(data01[11], data01[10]) * 0.1, 1),
 
-            # Correntes (A)
-            "correnteL1": round(combinar_registos(dados01[13], dados01[12]) * 0.001, 3),
-            "correnteL2": round(combinar_registos(dados01[15], dados01[14]) * 0.001, 3),
-            "correnteL3": round(combinar_registos(dados01[17], dados01[16]) * 0.001, 3),
+            # Currents (A)
+            "currentL1": round(combine_registers(data01[13], data01[12]) * 0.001, 3),
+            "currentL2": round(combine_registers(data01[15], data01[14]) * 0.001, 3),
+            "currentL3": round(combine_registers(data01[17], data01[16]) * 0.001, 3),
 
-            # Potências por fase (kW)
-            "potenciaL1": round(combinar_registos(dados01[19], dados01[18]) * 0.0001, 4),
-            "potenciaL2": round(combinar_registos(dados01[21], dados01[20]) * 0.0001, 4),
-            "potenciaL3": round(combinar_registos(dados01[23], dados01[22]) * 0.0001, 4),
+            # Phase Powers (kW)
+            "powerL1": round(combine_registers(data01[19], data01[18]) * 0.0001, 4),
+            "powerL2": round(combine_registers(data01[21], data01[20]) * 0.0001, 4),
+            "powerL3": round(combine_registers(data01[23], data01[22]) * 0.0001, 4),
 
-            # Potências totais
-            "potenciaActiva": round(combinar_registos(dados01[41], dados01[40]) * 0.1, 1),  # kW
-            "potenciaReactiva": round(combinar_registos(dados01[45], dados01[44]) * 0.1, 1),  # kVAr
-            "potenciaAparente": round(combinar_registos(dados01[43], dados01[42]) * 0.1, 1),  # kVA
-            "factorPotencia": round(dados01[49] * 0.001, 3),  # Factor de potência
+            # Total Powers
+            "activePower": round(combine_registers(data01[41], data01[40]) * 0.1, 1),  # kW
+            "reactivePower": round(combine_registers(data01[45], data01[44]) * 0.1, 1),  # kVAr
+            "apparentPower": round(combine_registers(data01[43], data01[42]) * 0.1, 1),  # kVA
+            "powerFactor": round(data01[49] * 0.001, 3),  # Power factor
 
-            # Frequência (Hz)
-            "frequencia": round(dados01[51] * 0.1, 1),
+            # Frequency (Hz)
+            "frequency": round(data01[51] * 0.1, 1),
 
-            # Energias (kWh/kVArh)
-            "energiaActiva": round(combinar_registos(dados01[53], dados01[52]) * 0.1, 1),
-            "energiaReactiva": round(combinar_registos(dados01[55], dados01[54]) * 0.1, 1),
-            "energiaAparente": round(combinar_registos(dados02[1], dados02[0]) * 0.1, 1),
+            # Energies (kWh/kVArh)
+            "activeEnergy": round(combine_registers(data01[53], data01[52]) * 0.1, 1),
+            "reactiveEnergy": round(combine_registers(data01[55], data01[54]) * 0.1, 1),
+            "apparentEnergy": round(combine_registers(data02[1], data02[0]) * 0.1, 1),
 
-            # THD Correntes (%)
-            "thdCorrenteL1": round(combinar_registos(dados03[1], dados03[0]) * 0.01, 2),
-            "thdCorrenteL2": round(combinar_registos(dados03[3], dados03[2]) * 0.01, 2),
-            "thdCorrenteL3": round(combinar_registos(dados03[5], dados03[4]) * 0.01, 2),
+            # Current THD (%)
+            "thdCurrentL1": round(combine_registers(data03[1], data03[0]) * 0.01, 2),
+            "thdCurrentL2": round(combine_registers(data03[3], data03[2]) * 0.01, 2),
+            "thdCurrentL3": round(combine_registers(data03[5], data03[4]) * 0.01, 2),
 
-            # THD Tensões (%)
-            "thdTensaoL1": round(combinar_registos(dados04[1], dados04[0]) * 0.01, 2),
-            "thdTensaoL2": round(combinar_registos(dados04[3], dados04[2]) * 0.01, 2),
-            "thdTensaoL3": round(combinar_registos(dados04[5], dados04[4]) * 0.01, 2)
+            # Voltage THD (%)
+            "thdVoltageL1": round(combine_registers(data04[1], data04[0]) * 0.01, 2),
+            "thdVoltageL2": round(combine_registers(data04[3], data04[2]) * 0.01, 2),
+            "thdVoltageL3": round(combine_registers(data04[5], data04[4]) * 0.01, 2)
         }
 
 
-def principal():
-    """Função principal"""
-    # Configuração do contador (ajustar conforme necessário)
-    config_contador = ConfiguracaoContador(
-        id_contador=167,
-        id_unidade=100,  # Endereço Modbus do contador
-        nome_contador="ContadorTeste",
-        id_empresa="MinhaEmpresa"
+def main():
+    """Main function"""
+    # Counter configuration (adjust as needed)
+    counter_config = CounterConfiguration(
+        counter_id=167,
+        unit_id=100,  # Modbus address of the counter
+        counter_name="TestCounter",
+        company_id="MyCompany"
     )
 
-    # Configuração Modbus TCP (ajustar conforme necessário)
-    config_modbus_tcp = ConfiguracaoModbusTCP(
-        host="192.168.1.100",  # Ajustar para o IP do vosso contador
-        porta=502
+    # Modbus TCP configuration (adjust as needed)
+    modbus_tcp_config = ModbusTCPConfiguration(
+        host="192.168.1.100",  # Adjust to your counter's IP
+        port=502
     )
 
-    # Configuração Modbus RTU (como fallback)
-    config_modbus_rtu = ConfiguracaoModbusRTU(
-        porta="/dev/ttyNS0",  # Ajustar conforme o vosso sistema
-        velocidade=9600
+    # Modbus RTU configuration (as fallback)
+    modbus_rtu_config = ModbusRTUConfiguration(
+        port="/dev/ttyNS0",  # Adjust according to your system
+        baudrate=9600
     )
 
-    # Cria o colector com ambas as configurações (TCP tem prioridade)
-    colector = ColectorDadosEM530(config_contador, 
-                                 config_modbus_tcp=config_modbus_tcp,
-                                 config_modbus_rtu=config_modbus_rtu)
+    # Create collector with both configurations (TCP has priority)
+    collector = EM530DataCollector(counter_config, 
+                                 modbus_tcp_config=modbus_tcp_config,
+                                 modbus_rtu_config=modbus_rtu_config)
 
     try:
-        # Liga
-        if not colector.ligar():
-            logger.error("Falha ao ligar. A encerrar...")
+        # Connect
+        if not collector.connect():
+            logger.error("Failed to connect. Exiting...")
             return
 
-        # Ciclo de recolha
-        logger.info("A iniciar recolha de dados...")
+        # Collection loop
+        logger.info("Starting data collection...")
         while True:
-            dados = colector.recolher_dados()
+            data = collector.collect_data()
 
-            if dados:
-                # Aqui podeis processar os dados conforme necessário
-                # Por exemplo: guardar na base de dados, enviar via MQTT, etc.
-                print(json.dumps(dados, indent=2, ensure_ascii=False))
+            if data:
+                # Here you can process data as needed
+                # For example: save to database, send via MQTT, etc.
+                print(json.dumps(data, indent=2, ensure_ascii=False))
 
-            # Intervalo entre leituras (ajustar conforme necessário)
+            # Interval between readings (adjust as needed)
             time.sleep(30)
 
     except KeyboardInterrupt:
-        logger.info("A parar recolha de dados...")
+        logger.info("Stopping data collection...")
     except Exception as e:
-        logger.error(f"Erro na execução principal: {e}")
+        logger.error(f"Error in main execution: {e}")
     finally:
-        colector.desligar()
+        collector.disconnect()
 
 
 if __name__ == "__main__":
-    principal()
+    main()

@@ -42,96 +42,96 @@ from nemotek_counters.carlo_gavazzi import em530
 #### RTU (Serial) Connection
 ```python
 from nemotek_counters.carlo_gavazzi.em530 import (
-    ConfiguracaoContador, 
-    ConfiguracaoModbusRTU, 
-    ColectorDadosEM530
+    CounterConfiguration, 
+    ModbusRTUConfiguration, 
+    EM530DataCollector
 )
 
 # Configure the counter
-config_contador = ConfiguracaoContador(
-    id_contador=167,
-    id_unidade=100,  # Modbus address
-    nome_contador="ContadorTeste",
-    id_empresa="MinhaEmpresa"
+counter_config = CounterConfiguration(
+    counter_id=167,
+    unit_id=100,  # Modbus address
+    counter_name="TestCounter",
+    company_id="MyCompany"
 )
 
 # Configure Modbus RTU connection
-config_rtu = ConfiguracaoModbusRTU(
-    porta="/dev/ttyNS0",  # Adjust according to your system
-    velocidade=9600
+rtu_config = ModbusRTUConfiguration(
+    port="/dev/ttyNS0",  # Adjust according to your system
+    baudrate=9600
 )
 
 # Create collector
-colector = ColectorDadosEM530(config_contador, config_modbus_rtu=config_rtu)
+collector = EM530DataCollector(counter_config, modbus_rtu_config=rtu_config)
 
 # Connect and read data
-if colector.ligar():
-    dados = colector.recolher_dados()
-    if dados:
-        print(f"Voltage L1: {dados['tensaoL1']}V")
-        print(f"Current L1: {dados['correnteL1']}A")
-        print(f"Active Power: {dados['potenciaActiva']}kW")
-    colector.desligar()
+if collector.connect():
+    data = collector.collect_data()
+    if data:
+        print(f"Voltage L1: {data['voltageL1']}V")
+        print(f"Current L1: {data['currentL1']}A")
+        print(f"Active Power: {data['activePower']}kW")
+    collector.disconnect()
 ```
 
 #### TCP Connection
 ```python
 from nemotek_counters.carlo_gavazzi.em530 import (
-    ConfiguracaoContador, 
-    ConfiguracaoModbusTCP, 
-    ColectorDadosEM530
+    CounterConfiguration, 
+    ModbusTCPConfiguration, 
+    EM530DataCollector
 )
 
 # Configure the counter
-config_contador = ConfiguracaoContador(
-    id_contador=167,
-    id_unidade=100,  # Modbus address
-    nome_contador="ContadorTeste",
-    id_empresa="MinhaEmpresa"
+counter_config = CounterConfiguration(
+    counter_id=167,
+    unit_id=100,  # Modbus address
+    counter_name="TestCounter",
+    company_id="MyCompany"
 )
 
 # Configure Modbus TCP connection
-config_tcp = ConfiguracaoModbusTCP(
+tcp_config = ModbusTCPConfiguration(
     host="192.168.1.100",  # IP address of the counter
-    porta=502
+    port=502
 )
 
 # Create collector
-colector = ColectorDadosEM530(config_contador, config_modbus_tcp=config_tcp)
+collector = EM530DataCollector(counter_config, modbus_tcp_config=tcp_config)
 
 # Connect and read data
-if colector.ligar():
-    dados = colector.recolher_dados()
-    if dados:
-        print(f"Voltage L1: {dados['tensaoL1']}V")
-        print(f"Current L1: {dados['correnteL1']}A")
-        print(f"Active Power: {dados['potenciaActiva']}kW")
-    colector.desligar()
+if collector.connect():
+    data = collector.collect_data()
+    if data:
+        print(f"Voltage L1: {data['voltageL1']}V")
+        print(f"Current L1: {data['currentL1']}A")
+        print(f"Active Power: {data['activePower']}kW")
+    collector.disconnect()
 ```
 
 #### TCP with RTU Fallback
 ```python
 from nemotek_counters.carlo_gavazzi.em530 import (
-    ConfiguracaoContador, 
-    ConfiguracaoModbusTCP,
-    ConfiguracaoModbusRTU,
-    ColectorDadosEM530
+    CounterConfiguration, 
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    EM530DataCollector
 )
 
-config_contador = ConfiguracaoContador(167, 100, "ContadorTeste", "MinhaEmpresa")
-config_tcp = ConfiguracaoModbusTCP("192.168.1.100", 502)
-config_rtu = ConfiguracaoModbusRTU("/dev/ttyNS0", 9600)
+counter_config = CounterConfiguration(167, 100, "TestCounter", "MyCompany")
+tcp_config = ModbusTCPConfiguration("192.168.1.100", 502)
+rtu_config = ModbusRTUConfiguration("/dev/ttyNS0", 9600)
 
 # Create collector with both configurations (tries TCP first, then RTU)
-colector = ColectorDadosEM530(config_contador, 
-                             config_modbus_tcp=config_tcp,
-                             config_modbus_rtu=config_rtu)
+collector = EM530DataCollector(counter_config, 
+                             modbus_tcp_config=tcp_config,
+                             modbus_rtu_config=rtu_config)
 
-if colector.ligar():
-    dados = colector.recolher_dados()
-    if dados:
-        print(f"Voltage L1: {dados['tensaoL1']}V")
-    colector.desligar()
+if collector.connect():
+    data = collector.collect_data()
+    if data:
+        print(f"Voltage L1: {data['voltageL1']}V")
+    collector.disconnect()
 ```
 
 ### Lovato DMG210 Example
