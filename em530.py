@@ -142,7 +142,7 @@ class ColectorDadosEM530:
             resultado = self.cliente.read_holding_registers(
                 address=endereco,
                 count=quantidade,
-                unit=self.config_contador.id_unidade
+                slave=self.config_contador.id_unidade
             )
 
             if resultado.isError():
