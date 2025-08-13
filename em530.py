@@ -206,7 +206,7 @@ class ColectorDadosEM530:
     def _formatar_dados(self, dados01: list, dados02: list, dados03: list, dados04: list, timestamp: str) -> Dict[
         str, Any]:
         """
-        Formata os dados conforme a função 'Contrel OutputFormatedData' do Node-RED
+        Formata os dados
         """
 
         def combinar_registos(reg_alto: int, reg_baixo: int) -> int:
