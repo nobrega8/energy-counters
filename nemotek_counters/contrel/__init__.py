@@ -4,10 +4,21 @@ Contrel Counter Modules
 This module provides interfaces for Contrel energy meters and counters.
 
 Available counters:
-- uD3h: (To be implemented)
+- uD3h: Energy meter with Modbus TCP/RTU support
 """
 
-# TODO: Implement uD3h counter class and functions
-# from .ud3h import UD3hDataCollector
+from .ud3h import (
+    UD3hDataCollector,
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    ModbusErrorManager
+)
 
-__all__ = []
+__all__ = [
+    "UD3hDataCollector",
+    "CounterConfiguration", 
+    "ModbusTCPConfiguration",
+    "ModbusRTUConfiguration",
+    "ModbusErrorManager"
+]
