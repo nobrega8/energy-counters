@@ -11,5 +11,5 @@ TODO: Implement the following:
 """
 
 # TODO: Implement uD3h counter functionality
-# class ColectorDadosUD3h:
+# class UD3hDataCollector:
 #     pass

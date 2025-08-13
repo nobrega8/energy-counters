@@ -11,5 +11,5 @@ TODO: Implement the following:
 """
 
 # TODO: Implement IEM3155 counter functionality
-# class ColectorDadosIEM3155:
+# class IEM3155DataCollector:
 #     pass

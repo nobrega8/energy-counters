@@ -11,5 +11,5 @@ TODO: Implement the following:
 """
 
 # TODO: Implement DMG800 counter functionality
-# class ColectorDadosDMG800:
+# class DMG800DataCollector:
 #     pass

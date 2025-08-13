@@ -8,6 +8,6 @@ Available counters:
 """
 
 # TODO: Implement LKM144 counter class and functions
-# from .lkm144 import ColectorDadosLKM144
+# from .lkm144 import LKM144DataCollector
 
 __all__ = []

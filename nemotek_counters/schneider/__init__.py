@@ -9,7 +9,7 @@ Available counters:
 """
 
 # TODO: Implement Schneider counter classes and functions
-# from .iem3250 import ColectorDadosIEM3250
-# from .iem3155 import ColectorDadosIEM3155
+# from .iem3250 import IEM3250DataCollector
+# from .iem3155 import IEM3155DataCollector
 
 __all__ = []
