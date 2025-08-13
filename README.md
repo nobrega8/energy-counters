@@ -1,6 +1,21 @@
 # Nemotek Counters Library
 
+[![PyPI version](https://badge.fury.io/py/nemotek-counters.svg)](https://badge.fury.io/py/nemotek-counters)
+[![Python versions](https://img.shields.io/pypi/pyversions/nemotek-counters.svg)](https://pypi.org/project/nemotek-counters/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 A Python library for reading data from various electrical energy counters including Carlo Gavazzi, Contrel, Diris, Lovato, RedZ, and Schneider devices.
+
+## Features
+
+- 🔌 **Multiple Communication Protocols**: Support for both Modbus RTU (serial) and Modbus TCP connections
+- 🔄 **Automatic Fallback**: Intelligent switching between TCP and RTU when both are configured
+- 📊 **Comprehensive Data Collection**: Read voltage, current, power, energy, and frequency measurements
+- 🛠️ **Easy Configuration**: Simple dataclass-based configuration for counters and connections
+- 📝 **Detailed Logging**: Built-in logging for debugging and monitoring
+- 🐍 **Modern Python**: Written for Python 3.8+ with type hints and dataclasses
+- 🔧 **Extensible Design**: Easy to add support for new counter models
 
 ## Installation
 
@@ -165,18 +180,23 @@ if colector.ligar():
 
 ## Supported Counters
 
-### Currently Implemented
-- **Carlo Gavazzi EM530**: Full Modbus RTU and TCP implementation with fallback support
-- **Lovato DMG210**: Full Modbus TCP and RTU implementation with fallback support
+| Brand | Model | Status | Modbus RTU | Modbus TCP | Features |
+|-------|-------|--------|------------|------------|----------|
+| **Carlo Gavazzi** | EM530 | ✅ **Implemented** | ✅ | ✅ | Full energy monitoring, fallback support |
+| **Lovato** | DMG210 | ✅ **Implemented** | ✅ | ✅ | Complete energy data collection, dual communication |
+| **Lovato** | DMG800 | 🚧 **Planned** | - | - | Module structure ready |
+| **Lovato** | DMG6 | 🚧 **Planned** | - | - | Module structure ready |
+| **Contrel** | uD3h | 🚧 **Planned** | - | - | Module structure ready |
+| **Diris** | A10 | 🚧 **Planned** | - | - | Module structure ready |
+| **RedZ** | LKM144 | 🚧 **Planned** | - | - | Module structure ready |
+| **Schneider** | IEM3250 | 🚧 **Planned** | - | - | Module structure ready |
+| **Schneider** | IEM3155 | 🚧 **Planned** | - | - | Module structure ready |
 
-### Planned (Empty modules ready for implementation)
-- **Contrel uD3h**
-- **Diris A10**
-- **Lovato DMG800**
-- **Lovato DMG6**
-- **RedZ LKM144**
-- **Schneider IEM3250**
-- **Schneider IEM3155**
+### Implementation Status Legend
+- ✅ **Implemented**: Full functionality with comprehensive data collection
+- 🚧 **Planned**: Module structure exists, implementation pending
+- ✅ Modbus RTU/TCP: Protocol supported
+- 🔄 **Fallback Support**: Automatic failover between TCP and RTU connections
 
 ## Requirements
 
