@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any
 import serial
 from pymodbus.client.serial import ModbusSerialClient
+from pymodbus.client.tcp import ModbusTcpClient
 from pymodbus.exceptions import ModbusException, ConnectionException
 
 # Configuração do registo de eventos
@@ -32,8 +33,27 @@ class ConfiguracaoContador:
 
 
 @dataclass
+class ConfiguracaoModbusTCP:
+    """Configuração da ligação Modbus TCP"""
+    host: str = "192.168.1.100"
+    porta: int = 502
+    timeout: float = 4.0
+
+
+@dataclass
+class ConfiguracaoModbusRTU:
+    """Configuração da ligação Modbus RTU"""
+    porta: str = "/dev/ttyAMA0"
+    velocidade: int = 9600
+    bits_dados: int = 8
+    paridade: str = 'N'
+    bits_paragem: int = 1
+    timeout: float = 2.0
+
+
+@dataclass
 class ConfiguracaoModbus:
-    """Configuração da ligação Modbus"""
+    """Configuração da ligação Modbus (compatibilidade com versões anteriores)"""
     porta: str = "/dev/ttyAMA0"
     velocidade: int = 9600
     bits_dados: int = 8
@@ -94,44 +114,105 @@ class GestorErrosModbus:
 class ColectorDadosEM530:
     """Recolha de dados do Carlo Gavazzi EM530"""
 
-    def __init__(self, config_contador: ConfiguracaoContador, config_modbus: ConfiguracaoModbus):
+    def __init__(self, config_contador: ConfiguracaoContador, 
+                 config_modbus: Optional[ConfiguracaoModbus] = None,
+                 config_modbus_tcp: Optional[ConfiguracaoModbusTCP] = None,
+                 config_modbus_rtu: Optional[ConfiguracaoModbusRTU] = None):
         self.config_contador = config_contador
-        self.config_modbus = config_modbus
+        self.config_modbus = config_modbus  # Para compatibilidade com versões anteriores
+        self.config_modbus_tcp = config_modbus_tcp
+        self.config_modbus_rtu = config_modbus_rtu
         self.cliente = None
+        self.tipo_conexao = None
         self.gestor_erros = GestorErrosModbus(
             config_contador.nome_contador,
             config_contador.id_empresa
         )
 
+        # Converter configuração legacy para RTU se fornecida
+        if config_modbus and not config_modbus_rtu:
+            self.config_modbus_rtu = ConfiguracaoModbusRTU(
+                porta=config_modbus.porta,
+                velocidade=config_modbus.velocidade,
+                bits_dados=config_modbus.bits_dados,
+                paridade=config_modbus.paridade,
+                bits_paragem=config_modbus.bits_paragem,
+                timeout=config_modbus.timeout
+            )
+
+        # Validar que pelo menos uma configuração foi fornecida
+        if not self.config_modbus_tcp and not self.config_modbus_rtu:
+            raise ValueError("Deve fornecer pelo menos uma configuração Modbus (TCP, RTU ou legacy)")
+
     def ligar(self) -> bool:
+        """Estabelece ligação Modbus TCP ou RTU"""
+        try:
+            # Tentar TCP primeiro, se disponível
+            if self.config_modbus_tcp:
+                return self._ligar_tcp()
+            elif self.config_modbus_rtu:
+                return self._ligar_rtu()
+            
+            return False
+
+        except Exception as e:
+            logger.error(f"Erro ao ligar: {e}")
+            return False
+
+    def _ligar_tcp(self) -> bool:
+        """Estabelece ligação Modbus TCP"""
+        try:
+            self.cliente = ModbusTcpClient(
+                host=self.config_modbus_tcp.host,
+                port=self.config_modbus_tcp.porta,
+                timeout=self.config_modbus_tcp.timeout
+            )
+
+            if self.cliente.connect():
+                self.tipo_conexao = "TCP"
+                logger.info(f"Ligado ao dispositivo Modbus TCP em {self.config_modbus_tcp.host}:{self.config_modbus_tcp.porta}")
+                return True
+            else:
+                logger.error("Falha ao ligar ao dispositivo Modbus TCP")
+                return False
+
+        except Exception as e:
+            logger.error(f"Erro ao ligar TCP: {e}")
+            # Se TCP falhar, tentar RTU se disponível
+            if self.config_modbus_rtu:
+                return self._ligar_rtu()
+            return False
+
+    def _ligar_rtu(self) -> bool:
         """Estabelece ligação Modbus RTU"""
         try:
             self.cliente = ModbusSerialClient(
                 method='rtu',
-                port=self.config_modbus.porta,
-                baudrate=self.config_modbus.velocidade,
-                bytesize=self.config_modbus.bits_dados,
-                parity=self.config_modbus.paridade,
-                stopbits=self.config_modbus.bits_paragem,
-                timeout=self.config_modbus.timeout
+                port=self.config_modbus_rtu.porta,
+                baudrate=self.config_modbus_rtu.velocidade,
+                bytesize=self.config_modbus_rtu.bits_dados,
+                parity=self.config_modbus_rtu.paridade,
+                stopbits=self.config_modbus_rtu.bits_paragem,
+                timeout=self.config_modbus_rtu.timeout
             )
 
             if self.cliente.connect():
-                logger.info(f"Ligado ao dispositivo Modbus na porta {self.config_modbus.porta}")
+                self.tipo_conexao = "RTU"
+                logger.info(f"Ligado ao dispositivo Modbus RTU na porta {self.config_modbus_rtu.porta}")
                 return True
             else:
-                logger.error("Falha ao ligar ao dispositivo Modbus")
+                logger.error("Falha ao ligar ao dispositivo Modbus RTU")
                 return False
 
         except Exception as e:
-            logger.error(f"Erro ao ligar: {e}")
+            logger.error(f"Erro ao ligar RTU: {e}")
             return False
 
     def desligar(self):
         """Desliga do dispositivo Modbus"""
         if self.cliente:
             self.cliente.close()
-            logger.info("Desligado do dispositivo Modbus")
+            logger.info(f"Desligado do dispositivo Modbus {self.tipo_conexao}")
 
     def ler_registos(self, endereco: int, quantidade: int) -> Optional[list]:
         """Lê registos Modbus com tratamento de erros"""
@@ -275,14 +356,22 @@ def principal():
         id_empresa="MinhaEmpresa"
     )
 
-    # Configuração Modbus (ajustar porta série conforme necessário)
-    config_modbus = ConfiguracaoModbus(
+    # Configuração Modbus TCP (ajustar conforme necessário)
+    config_modbus_tcp = ConfiguracaoModbusTCP(
+        host="192.168.1.100",  # Ajustar para o IP do vosso contador
+        porta=502
+    )
+
+    # Configuração Modbus RTU (como fallback)
+    config_modbus_rtu = ConfiguracaoModbusRTU(
         porta="/dev/ttyNS0",  # Ajustar conforme o vosso sistema
         velocidade=9600
     )
 
-    # Cria o colector
-    colector = ColectorDadosEM530(config_contador, config_modbus)
+    # Cria o colector com ambas as configurações (TCP tem prioridade)
+    colector = ColectorDadosEM530(config_contador, 
+                                 config_modbus_tcp=config_modbus_tcp,
+                                 config_modbus_rtu=config_modbus_rtu)
 
     try:
         # Liga
