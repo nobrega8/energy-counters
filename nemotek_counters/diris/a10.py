@@ -11,5 +11,5 @@ TODO: Implement the following:
 """
 
 # TODO: Implement A10 counter functionality
-# class ColectorDadosA10:
+# class A10DataCollector:
 #     pass

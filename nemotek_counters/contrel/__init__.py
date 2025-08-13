@@ -8,6 +8,6 @@ Available counters:
 """
 
 # TODO: Implement uD3h counter class and functions
-# from .ud3h import ColectorDadosUD3h
+# from .ud3h import UD3hDataCollector
 
 __all__ = []

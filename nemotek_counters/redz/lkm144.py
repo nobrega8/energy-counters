@@ -11,5 +11,5 @@ TODO: Implement the following:
 """
 
 # TODO: Implement LKM144 counter functionality
-# class ColectorDadosLKM144:
+# class LKM144DataCollector:
 #     pass

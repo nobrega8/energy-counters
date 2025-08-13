@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Recolha de dados do contador Lovato DMG210 via Modbus RTU/TCP
-Baseado no Node-Red flow fornecido e na implementação do Carlo Gavazzi EM530
+Data collection from Lovato DMG210 counter via Modbus RTU/TCP
+Based on Node-Red flow and Carlo Gavazzi EM530 implementation
 """
 
 import time
@@ -15,7 +15,7 @@ from pymodbus.client.serial import ModbusSerialClient
 from pymodbus.client.tcp import ModbusTcpClient
 from pymodbus.exceptions import ModbusException, ConnectionException
 
-# Configuração do registo de eventos
+# Event logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -24,363 +24,363 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ConfiguracaoContador:
-    """Configuração do contador"""
-    id_contador: int
-    id_unidade: int
-    nome_contador: str
-    id_empresa: str
+class CounterConfiguration:
+    """Counter configuration"""
+    counter_id: int
+    unit_id: int
+    counter_name: str
+    company_id: str
 
 
 @dataclass
-class ConfiguracaoModbusTCP:
-    """Configuração da ligação Modbus TCP"""
+class ModbusTCPConfiguration:
+    """Modbus TCP connection configuration"""
     host: str = "192.168.1.100"
-    porta: int = 502
+    port: int = 502
     timeout: float = 4.0
 
 
 @dataclass
-class ConfiguracaoModbusRTU:
-    """Configuração da ligação Modbus RTU"""
-    porta: str = "/dev/ttyAMA0"
-    velocidade: int = 9600
-    bits_dados: int = 8
-    paridade: str = 'N'
-    bits_paragem: int = 1
+class ModbusRTUConfiguration:
+    """Modbus RTU connection configuration"""
+    port: str = "/dev/ttyAMA0"
+    baudrate: int = 9600
+    data_bits: int = 8
+    parity: str = 'N'
+    stop_bits: int = 1
     timeout: float = 2.0
 
 
-class GestorErrosModbus:
-    """Gestor de erros Modbus baseado no subflow Node-RED"""
+class ModbusErrorManager:
+    """Modbus error manager based on Node-RED subflow"""
 
-    def __init__(self, nome_contador: str, id_empresa: str):
-        self.nome_contador = nome_contador
-        self.id_empresa = id_empresa
-        self.contagem_erros = 0
-        self.ultimo_estado_erro = False
+    def __init__(self, counter_name: str, company_id: str):
+        self.counter_name = counter_name
+        self.company_id = company_id
+        self.error_count = 0
+        self.last_error_state = False
 
-    def processar_erro(self, tem_erro: bool) -> Optional[Dict[str, Any]]:
+    def process_error(self, has_error: bool) -> Optional[Dict[str, Any]]:
         """
-        Processa erro seguindo a lógica do Node-RED:
-        - Incrementa contador se há erro
-        - Reinicia se não há erro
-        - Considera erro apenas se contagem > 2
+        Process error following Node-RED logic:
+        - Increment counter if there's an error
+        - Reset if there's no error
+        - Consider error only if count > 2
         """
-        if tem_erro:
-            self.contagem_erros += 1
+        if has_error:
+            self.error_count += 1
         else:
-            self.contagem_erros = 0
+            self.error_count = 0
 
-        estado_erro_actual = self.contagem_erros > 2
+        current_error_state = self.error_count > 2
 
-        # Reportar por exceção - só reporta se mudou de estado
-        if estado_erro_actual != self.ultimo_estado_erro:
-            self.ultimo_estado_erro = estado_erro_actual
-            return self._criar_mensagem_erro(estado_erro_actual)
+        # Report by exception - only report if state changed
+        if current_error_state != self.last_error_state:
+            self.last_error_state = current_error_state
+            return self._create_error_message(current_error_state)
 
         return None
 
-    def _criar_mensagem_erro(self, e_erro: bool) -> Dict[str, Any]:
-        """Cria mensagem de erro baseada no Node-RED"""
+    def _create_error_message(self, is_error: bool) -> Dict[str, Any]:
+        """Create error message based on Node-RED"""
         timestamp = datetime.now().isoformat()
 
-        if e_erro:
-            topico = f"{self.id_empresa} Erro Comunicação {self.nome_contador} INACTIVO"
-            mensagem = f"{self.id_empresa} comunicação com o contador {self.nome_contador} está INACTIVA desde {timestamp}"
+        if is_error:
+            topic = f"{self.company_id} Communication Error {self.counter_name} INACTIVE"
+            message = f"{self.company_id} communication with counter {self.counter_name} is INACTIVE since {timestamp}"
         else:
-            topico = f"{self.id_empresa} Erro Comunicação {self.nome_contador} Restaurado"
-            mensagem = f"{self.id_empresa} comunicação com o contador {self.nome_contador} foi restaurada às {timestamp}"
+            topic = f"{self.company_id} Communication Error {self.counter_name} Restored"
+            message = f"{self.company_id} communication with counter {self.counter_name} was restored at {timestamp}"
 
         return {
-            "topico": topico,
-            "mensagem": mensagem,
+            "topic": topic,
+            "message": message,
             "timestamp": timestamp,
-            "estado_erro": e_erro
+            "error_state": is_error
         }
 
 
-class ColectorDadosDMG210:
-    """Recolha de dados do Lovato DMG210"""
+class DMG210DataCollector:
+    """Lovato DMG210 data collection"""
 
-    def __init__(self, config_contador: ConfiguracaoContador, 
-                 config_modbus_tcp: Optional[ConfiguracaoModbusTCP] = None,
-                 config_modbus_rtu: Optional[ConfiguracaoModbusRTU] = None):
-        self.config_contador = config_contador
-        self.config_modbus_tcp = config_modbus_tcp
-        self.config_modbus_rtu = config_modbus_rtu
-        self.cliente = None
-        self.tipo_conexao = None
-        self.gestor_erros = GestorErrosModbus(
-            config_contador.nome_contador,
-            config_contador.id_empresa
+    def __init__(self, counter_config: CounterConfiguration, 
+                 modbus_tcp_config: Optional[ModbusTCPConfiguration] = None,
+                 modbus_rtu_config: Optional[ModbusRTUConfiguration] = None):
+        self.counter_config = counter_config
+        self.modbus_tcp_config = modbus_tcp_config
+        self.modbus_rtu_config = modbus_rtu_config
+        self.client = None
+        self.connection_type = None
+        self.error_manager = ModbusErrorManager(
+            counter_config.counter_name,
+            counter_config.company_id
         )
 
-        # Validar que pelo menos uma configuração foi fornecida
-        if not config_modbus_tcp and not config_modbus_rtu:
-            raise ValueError("Deve fornecer pelo menos uma configuração Modbus (TCP ou RTU)")
+        # Validate that at least one configuration was provided
+        if not modbus_tcp_config and not modbus_rtu_config:
+            raise ValueError("Must provide at least one Modbus configuration (TCP or RTU)")
 
-    def ligar(self) -> bool:
-        """Estabelece ligação Modbus TCP ou RTU"""
+    def connect(self) -> bool:
+        """Establish Modbus TCP or RTU connection"""
         try:
-            # Tentar TCP primeiro, se disponível
-            if self.config_modbus_tcp:
-                return self._ligar_tcp()
-            elif self.config_modbus_rtu:
-                return self._ligar_rtu()
+            # Try TCP first, if available
+            if self.modbus_tcp_config:
+                return self._connect_tcp()
+            elif self.modbus_rtu_config:
+                return self._connect_rtu()
             
             return False
 
         except Exception as e:
-            logger.error(f"Erro ao ligar: {e}")
+            logger.error(f"Error connecting: {e}")
             return False
 
-    def _ligar_tcp(self) -> bool:
-        """Estabelece ligação Modbus TCP"""
+    def _connect_tcp(self) -> bool:
+        """Establish Modbus TCP connection"""
         try:
-            self.cliente = ModbusTcpClient(
-                host=self.config_modbus_tcp.host,
-                port=self.config_modbus_tcp.porta,
-                timeout=self.config_modbus_tcp.timeout
+            self.client = ModbusTcpClient(
+                host=self.modbus_tcp_config.host,
+                port=self.modbus_tcp_config.port,
+                timeout=self.modbus_tcp_config.timeout
             )
 
-            if self.cliente.connect():
-                self.tipo_conexao = "TCP"
-                logger.info(f"Ligado ao dispositivo Modbus TCP em {self.config_modbus_tcp.host}:{self.config_modbus_tcp.porta}")
+            if self.client.connect():
+                self.connection_type = "TCP"
+                logger.info(f"Connected to Modbus TCP device at {self.modbus_tcp_config.host}:{self.modbus_tcp_config.port}")
                 return True
             else:
-                logger.error("Falha ao ligar ao dispositivo Modbus TCP")
+                logger.error("Failed to connect to Modbus TCP device")
                 return False
 
         except Exception as e:
-            logger.error(f"Erro ao ligar TCP: {e}")
-            # Se TCP falhar, tentar RTU se disponível
-            if self.config_modbus_rtu:
-                return self._ligar_rtu()
+            logger.error(f"TCP connection error: {e}")
+            # If TCP fails, try RTU if available
+            if self.modbus_rtu_config:
+                return self._connect_rtu()
             return False
 
-    def _ligar_rtu(self) -> bool:
-        """Estabelece ligação Modbus RTU"""
+    def _connect_rtu(self) -> bool:
+        """Establish Modbus RTU connection"""
         try:
-            self.cliente = ModbusSerialClient(
-                port=self.config_modbus_rtu.porta,
-                baudrate=self.config_modbus_rtu.velocidade,
-                bytesize=self.config_modbus_rtu.bits_dados,
-                parity=self.config_modbus_rtu.paridade,
-                stopbits=self.config_modbus_rtu.bits_paragem,
-                timeout=self.config_modbus_rtu.timeout
+            self.client = ModbusSerialClient(
+                port=self.modbus_rtu_config.port,
+                baudrate=self.modbus_rtu_config.baudrate,
+                bytesize=self.modbus_rtu_config.data_bits,
+                parity=self.modbus_rtu_config.parity,
+                stopbits=self.modbus_rtu_config.stop_bits,
+                timeout=self.modbus_rtu_config.timeout
             )
 
-            if self.cliente.connect():
-                self.tipo_conexao = "RTU"
-                logger.info(f"Ligado ao dispositivo Modbus RTU na porta {self.config_modbus_rtu.porta}")
+            if self.client.connect():
+                self.connection_type = "RTU"
+                logger.info(f"Connected to Modbus RTU device on port {self.modbus_rtu_config.port}")
                 return True
             else:
-                logger.error("Falha ao ligar ao dispositivo Modbus RTU")
+                logger.error("Failed to connect to Modbus RTU device")
                 return False
 
         except Exception as e:
-            logger.error(f"Erro ao ligar RTU: {e}")
+            logger.error(f"RTU connection error: {e}")
             return False
 
-    def desligar(self):
-        """Desliga do dispositivo Modbus"""
-        if self.cliente:
-            self.cliente.close()
-            logger.info(f"Desligado do dispositivo Modbus {self.tipo_conexao}")
+    def disconnect(self):
+        """Disconnect from Modbus device"""
+        if self.client:
+            self.client.close()
+            logger.info(f"Disconnected from Modbus {self.connection_type} device")
 
-    def ler_registos(self, endereco: int, quantidade: int) -> Optional[list]:
-        """Lê registos Modbus com tratamento de erros"""
+    def read_registers(self, address: int, count: int) -> Optional[list]:
+        """Read Modbus registers with error handling"""
         try:
-            if not self.cliente or not self.cliente.is_socket_open():
-                raise ConnectionException("Cliente não ligado")
+            if not self.client or not self.client.is_socket_open():
+                raise ConnectionException("Client not connected")
 
-            resultado = self.cliente.read_holding_registers(
-                address=endereco,
-                count=quantidade,
-                slave=self.config_contador.id_unidade
+            result = self.client.read_holding_registers(
+                address=address,
+                count=count,
+                slave=self.counter_config.unit_id
             )
 
-            if resultado.isError():
-                raise ModbusException(f"Erro na leitura: {resultado}")
+            if result.isError():
+                raise ModbusException(f"Read error: {result}")
 
-            return resultado.registers
+            return result.registers
 
         except Exception as e:
-            logger.error(f"Erro ao ler registos {endereco}-{endereco + quantidade - 1}: {e}")
+            logger.error(f"Error reading registers {address}-{address + count - 1}: {e}")
             return None
 
-    def recolher_dados(self) -> Optional[Dict[str, Any]]:
-        """Recolhe todos os dados seguindo a sequência do Node-RED DMG210"""
+    def collect_data(self) -> Optional[Dict[str, Any]]:
+        """Collect all data following Node-RED DMG210 sequence"""
         timestamp = datetime.now().isoformat()
 
         try:
-            # Leitura 1: Endereço 2, 24 registos (dados instantâneos)
-            dados01 = self.ler_registos(2, 24)
-            if dados01 is None:
-                self._processar_erro_comunicacao()
+            # Read 1: Address 2, 24 registers (instantaneous data)
+            data01 = self.read_registers(2, 24)
+            if data01 is None:
+                self._process_communication_error()
                 return None
 
-            # Leitura 2: Endereço 0x32 (50), 38 registos (frequência, equivalentes, THD)
-            dados02 = self.ler_registos(0x32, 38)
-            if dados02 is None:
-                self._processar_erro_comunicacao()
+            # Read 2: Address 0x32 (50), 38 registers (frequency, equivalents, THD)
+            data02 = self.read_registers(0x32, 38)
+            if data02 is None:
+                self._process_communication_error()
                 return None
 
-            # Leitura 3: Endereço 6687, 10 registos (energias)
-            dados03 = self.ler_registos(6687, 10)
-            if dados03 is None:
-                self._processar_erro_comunicacao()
+            # Read 3: Address 6687, 10 registers (energies)
+            data03 = self.read_registers(6687, 10)
+            if data03 is None:
+                self._process_communication_error()
                 return None
 
-            # Processa sucesso na comunicação
-            msg_erro = self.gestor_erros.processar_erro(False)
-            if msg_erro:
-                logger.info(f"Comunicação restaurada: {msg_erro['mensagem']}")
+            # Process communication success
+            error_msg = self.error_manager.process_error(False)
+            if error_msg:
+                logger.info(f"Communication restored: {error_msg['message']}")
 
-            # Formata dados conforme função Node-RED
-            dados_formatados = self._formatar_dados(dados01, dados02, dados03, timestamp)
-            return dados_formatados
+            # Format data according to Node-RED function
+            formatted_data = self._format_data(data01, data02, data03, timestamp)
+            return formatted_data
 
         except Exception as e:
-            logger.error(f"Erro na recolha de dados: {e}")
-            self._processar_erro_comunicacao()
+            logger.error(f"Error collecting data: {e}")
+            self._process_communication_error()
             return None
 
-    def _processar_erro_comunicacao(self):
-        """Processa erro de comunicação"""
-        msg_erro = self.gestor_erros.processar_erro(True)
-        if msg_erro:
-            logger.warning(f"Erro de comunicação: {msg_erro['mensagem']}")
+    def _process_communication_error(self):
+        """Process communication error"""
+        error_msg = self.error_manager.process_error(True)
+        if error_msg:
+            logger.warning(f"Communication error: {error_msg['message']}")
 
-    def _formatar_dados(self, dados01: list, dados02: list, dados03: list, timestamp: str) -> Dict[str, Any]:
+    def _format_data(self, data01: list, data02: list, data03: list, timestamp: str) -> Dict[str, Any]:
         """
-        Formata os dados conforme a configuração do Node-RED DMG210
+        Format data according to Node-RED DMG210 configuration
         """
 
-        def uint32_from_registers(reg_alto: int, reg_baixo: int) -> int:
-            """Converte dois registos de 16 bits num valor uint32 big-endian"""
-            return (reg_alto << 16) + reg_baixo
+        def uint32_from_registers(high_reg: int, low_reg: int) -> int:
+            """Convert two 16-bit registers to uint32 big-endian value"""
+            return (high_reg << 16) + low_reg
 
-        def int32_from_registers(reg_alto: int, reg_baixo: int) -> int:
-            """Converte dois registos de 16 bits num valor int32 big-endian"""
-            value = (reg_alto << 16) + reg_baixo
-            # Converte para signed int32
+        def int32_from_registers(high_reg: int, low_reg: int) -> int:
+            """Convert two 16-bit registers to int32 big-endian value"""
+            value = (high_reg << 16) + low_reg
+            # Convert to signed int32
             if value > 0x7FFFFFFF:
                 value -= 0x100000000
             return value
 
         return {
-            "idEmpresa": self.config_contador.id_empresa,
+            "companyId": self.counter_config.company_id,
             "timestamp": timestamp,
-            "idContador": str(self.config_contador.id_contador),
-            "nomeContador": self.config_contador.nome_contador,
+            "counterId": str(self.counter_config.counter_id),
+            "counterName": self.counter_config.counter_name,
 
-            # Dados instantâneos (dados01) - conforme parser instant
-            # Tensões L-N (V) - uint32be scale 0.01
-            "vl1": round(uint32_from_registers(dados01[0], dados01[1]) * 0.01, 2),
-            "vl2": round(uint32_from_registers(dados01[2], dados01[3]) * 0.01, 2),
-            "vl3": round(uint32_from_registers(dados01[4], dados01[5]) * 0.01, 2),
+            # Instantaneous data (data01) - according to instant parser
+            # L-N Voltages (V) - uint32be scale 0.01
+            "vl1": round(uint32_from_registers(data01[0], data01[1]) * 0.01, 2),
+            "vl2": round(uint32_from_registers(data01[2], data01[3]) * 0.01, 2),
+            "vl3": round(uint32_from_registers(data01[4], data01[5]) * 0.01, 2),
 
-            # Correntes (A) - uint32be scale 0.0001
-            "il1": round(uint32_from_registers(dados01[6], dados01[7]) * 0.0001, 4),
-            "il2": round(uint32_from_registers(dados01[8], dados01[9]) * 0.0001, 4),
-            "il3": round(uint32_from_registers(dados01[10], dados01[11]) * 0.0001, 4),
+            # Currents (A) - uint32be scale 0.0001
+            "il1": round(uint32_from_registers(data01[6], data01[7]) * 0.0001, 4),
+            "il2": round(uint32_from_registers(data01[8], data01[9]) * 0.0001, 4),
+            "il3": round(uint32_from_registers(data01[10], data01[11]) * 0.0001, 4),
 
-            # Tensões L-L (V) - uint32be scale 0.01
-            "vl12": round(uint32_from_registers(dados01[12], dados01[13]) * 0.01, 2),
-            "vl23": round(uint32_from_registers(dados01[14], dados01[15]) * 0.01, 2),
-            "vl31": round(uint32_from_registers(dados01[16], dados01[17]) * 0.01, 2),
+            # L-L Voltages (V) - uint32be scale 0.01
+            "vl12": round(uint32_from_registers(data01[12], data01[13]) * 0.01, 2),
+            "vl23": round(uint32_from_registers(data01[14], data01[15]) * 0.01, 2),
+            "vl31": round(uint32_from_registers(data01[16], data01[17]) * 0.01, 2),
 
-            # Potências por fase (kW) - int32be scale 0.01
-            "p1": round(int32_from_registers(dados01[18], dados01[19]) * 0.01, 2),
-            "p2": round(int32_from_registers(dados01[20], dados01[21]) * 0.01, 2),
-            "p3": round(int32_from_registers(dados01[22], dados01[23]) * 0.01, 2),
+            # Phase Powers (kW) - int32be scale 0.01
+            "p1": round(int32_from_registers(data01[18], data01[19]) * 0.01, 2),
+            "p2": round(int32_from_registers(data01[20], data01[21]) * 0.01, 2),
+            "p3": round(int32_from_registers(data01[22], data01[23]) * 0.01, 2),
 
-            # Dados equivalentes (dados02) - conforme parser instant
-            # Frequência (Hz) - uint32be scale 0.01
-            "freq": round(uint32_from_registers(dados02[0], dados02[1]) * 0.01, 2),
+            # Equivalent data (data02) - according to instant parser
+            # Frequency (Hz) - uint32be scale 0.01
+            "freq": round(uint32_from_registers(data02[0], data02[1]) * 0.01, 2),
 
-            # Valores equivalentes
-            "veq": round(uint32_from_registers(dados02[2], dados02[3]) * 0.01, 2),
-            "veql": round(uint32_from_registers(dados02[4], dados02[5]) * 0.01, 2),
-            "ieq": round(uint32_from_registers(dados02[6], dados02[7]) * 0.0001, 4),
+            # Equivalent values
+            "veq": round(uint32_from_registers(data02[2], data02[3]) * 0.01, 2),
+            "veql": round(uint32_from_registers(data02[4], data02[5]) * 0.01, 2),
+            "ieq": round(uint32_from_registers(data02[6], data02[7]) * 0.0001, 4),
 
-            # Potências equivalentes (kW/kVAr/kVA)
-            "peq": round(int32_from_registers(dados02[8], dados02[9]) * 0.01, 2),
-            "qeq": round(int32_from_registers(dados02[10], dados02[11]) * 0.01, 2),
-            "seq": round(uint32_from_registers(dados02[12], dados02[13]) * 0.01, 2),
-            "pfeq": round(uint32_from_registers(dados02[14], dados02[15]) * 0.0001, 4),
+            # Equivalent Powers (kW/kVAr/kVA)
+            "peq": round(int32_from_registers(data02[8], data02[9]) * 0.01, 2),
+            "qeq": round(int32_from_registers(data02[10], data02[11]) * 0.01, 2),
+            "seq": round(uint32_from_registers(data02[12], data02[13]) * 0.01, 2),
+            "pfeq": round(uint32_from_registers(data02[14], data02[15]) * 0.0001, 4),
 
-            # THD Tensões (%)
-            "thdV1": round(uint32_from_registers(dados02[26], dados02[27]) * 0.01, 2),
-            "thdV2": round(uint32_from_registers(dados02[28], dados02[29]) * 0.01, 2),
-            "thdV3": round(uint32_from_registers(dados02[30], dados02[31]) * 0.01, 2),
+            # Voltage THD (%)
+            "thdV1": round(uint32_from_registers(data02[26], data02[27]) * 0.01, 2),
+            "thdV2": round(uint32_from_registers(data02[28], data02[29]) * 0.01, 2),
+            "thdV3": round(uint32_from_registers(data02[30], data02[31]) * 0.01, 2),
 
-            # THD Correntes (%)
-            "thdIL1": round(uint32_from_registers(dados02[32], dados02[33]) * 0.01, 2),
-            "thdIL2": round(uint32_from_registers(dados02[34], dados02[35]) * 0.01, 2),
-            "thdIL3": round(uint32_from_registers(dados02[36], dados02[37]) * 0.01, 2),
+            # Current THD (%)
+            "thdIL1": round(uint32_from_registers(data02[32], data02[33]) * 0.01, 2),
+            "thdIL2": round(uint32_from_registers(data02[34], data02[35]) * 0.01, 2),
+            "thdIL3": round(uint32_from_registers(data02[36], data02[37]) * 0.01, 2),
 
-            # Energias (dados03) - conforme parser energy
+            # Energies (data03) - according to energy parser
             # int32be scale 0.1
-            "energiaActiva": round(int32_from_registers(dados03[0], dados03[1]) * 0.1, 1),
-            "energiaReactiva": round(int32_from_registers(dados03[4], dados03[5]) * 0.1, 1),
-            "energiaAparente": round(int32_from_registers(dados03[8], dados03[9]) * 0.1, 1),
+            "activeEnergy": round(int32_from_registers(data03[0], data03[1]) * 0.1, 1),
+            "reactiveEnergy": round(int32_from_registers(data03[4], data03[5]) * 0.1, 1),
+            "apparentEnergy": round(int32_from_registers(data03[8], data03[9]) * 0.1, 1),
         }
 
 
-def principal():
-    """Função principal para teste"""
-    # Configuração do contador (ajustar conforme necessário)
-    config_contador = ConfiguracaoContador(
-        id_contador=115,
-        id_unidade=81,  # Endereço Modbus do contador
-        nome_contador="Geral #115",
-        id_empresa="MinhaEmpresa"
+def main():
+    """Main function for testing"""
+    # Counter configuration (adjust as needed)
+    counter_config = CounterConfiguration(
+        counter_id=115,
+        unit_id=81,  # Modbus address of the counter
+        counter_name="General #115",
+        company_id="MyCompany"
     )
 
-    # Configuração Modbus TCP (ajustar conforme necessário)
-    config_modbus_tcp = ConfiguracaoModbusTCP(
+    # Modbus TCP configuration (adjust as needed)
+    modbus_tcp_config = ModbusTCPConfiguration(
         host="172.16.5.11",
-        porta=502
+        port=502
     )
 
-    # Configuração Modbus RTU (como fallback)
-    config_modbus_rtu = ConfiguracaoModbusRTU(
-        porta="/dev/ttyNS0",
-        velocidade=9600
+    # Modbus RTU configuration (as fallback)
+    modbus_rtu_config = ModbusRTUConfiguration(
+        port="/dev/ttyNS0",
+        baudrate=9600
     )
 
-    # Cria o colector com ambas as configurações
-    colector = ColectorDadosDMG210(config_contador, config_modbus_tcp, config_modbus_rtu)
+    # Create collector with both configurations
+    collector = DMG210DataCollector(counter_config, modbus_tcp_config, modbus_rtu_config)
 
     try:
-        # Liga
-        if not colector.ligar():
-            logger.error("Falha ao ligar. A encerrar...")
+        # Connect
+        if not collector.connect():
+            logger.error("Failed to connect. Exiting...")
             return
 
-        # Ciclo de recolha
-        logger.info("A iniciar recolha de dados...")
+        # Collection loop
+        logger.info("Starting data collection...")
         while True:
-            dados = colector.recolher_dados()
+            data = collector.collect_data()
 
-            if dados:
-                # Aqui podeis processar os dados conforme necessário
-                # Por exemplo: guardar na base de dados, enviar via MQTT, etc.
-                print(json.dumps(dados, indent=2, ensure_ascii=False))
+            if data:
+                # Here you can process data as needed
+                # For example: save to database, send via MQTT, etc.
+                print(json.dumps(data, indent=2, ensure_ascii=False))
 
-            # Intervalo entre leituras (ajustar conforme necessário)
+            # Interval between readings (adjust as needed)
             time.sleep(30)
 
     except KeyboardInterrupt:
-        logger.info("A parar recolha de dados...")
+        logger.info("Stopping data collection...")
     except Exception as e:
-        logger.error(f"Erro na execução principal: {e}")
+        logger.error(f"Error in main execution: {e}")
     finally:
-        colector.desligar()
+        collector.disconnect()
 
 
 if __name__ == "__main__":
-    principal()
+    main()

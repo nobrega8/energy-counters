@@ -8,6 +8,6 @@ Available counters:
 """
 
 # TODO: Implement A10 counter class and functions
-# from .a10 import ColectorDadosA10
+# from .a10 import A10DataCollector
 
 __all__ = []

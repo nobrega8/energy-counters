@@ -11,5 +11,5 @@ TODO: Implement the following:
 """
 
 # TODO: Implement DMG6 counter functionality
-# class ColectorDadosDMG6:
+# class DMG6DataCollector:
 #     pass

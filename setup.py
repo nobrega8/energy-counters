@@ -18,7 +18,7 @@ setup(
     description="A Python library for reading data from various electrical energy counters",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Nemotek-GTC/contadores«",
+    url="https://github.com/Nemotek-GTC/counters",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -37,7 +37,7 @@ setup(
     install_requires=requirements,
     keywords="energy meters, counters, modbus, carlo gavazzi, lovato, schneider",
     project_urls={
-        "Bug Reports": "https://github.com/Nemotek-GTC/contadores/issues",
-        "Source": "https://github.com/Nemotek-GTC/contadores",
+        "Bug Reports": "https://github.com/Nemotek-GTC/counters/issues",
+        "Source": "https://github.com/Nemotek-GTC/counters",
     },
 )
