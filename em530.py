@@ -277,7 +277,7 @@ def principal():
 
     # Configuração Modbus (ajustar porta série conforme necessário)
     config_modbus = ConfiguracaoModbus(
-        porta="/dev/ttyAMA0",  # Ajustar conforme o vosso sistema
+        porta="/dev/ttyNS0",  # Ajustar conforme o vosso sistema
         velocidade=9600
     )
 
