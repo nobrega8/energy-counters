@@ -57,16 +57,60 @@ if colector.ligar():
     colector.desligar()
 ```
 
+### Lovato DMG210 Example
+```python
+from nemotek_counters.lovato.dmg210 import (
+    ConfiguracaoContador,
+    ConfiguracaoModbusTCP,
+    ConfiguracaoModbusRTU,
+    ColectorDadosDMG210
+)
+
+# Configure the counter  
+config_contador = ConfiguracaoContador(
+    id_contador=115,
+    id_unidade=81,  # Modbus address
+    nome_contador="Geral #115",
+    id_empresa="MinhaEmpresa"
+)
+
+# Configure Modbus TCP (primary)
+config_tcp = ConfiguracaoModbusTCP(
+    host="172.16.5.11",
+    porta=502
+)
+
+# Configure Modbus RTU (fallback)
+config_rtu = ConfiguracaoModbusRTU(
+    porta="/dev/ttyNS0",
+    velocidade=9600
+)
+
+# Create collector with both TCP and RTU support
+colector = ColectorDadosDMG210(config_contador, config_tcp, config_rtu)
+
+# Connect and read data (tries TCP first, RTU as fallback)
+if colector.ligar():
+    dados = colector.recolher_dados()
+    if dados:
+        print(f"Voltage L1: {dados['vl1']}V")
+        print(f"Current L1: {dados['il1']}A") 
+        print(f"Power P1: {dados['p1']}kW")
+        print(f"Frequency: {dados['freq']}Hz")
+        print(f"Active Energy: {dados['energiaActiva']}kWh")
+    colector.desligar()
+```
+
 ## Supported Counters
 
 ### Currently Implemented
 - **Carlo Gavazzi EM530**: Full Modbus RTU implementation
+- **Lovato DMG210**: Full Modbus TCP and RTU implementation with fallback support
 
 ### Planned (Empty modules ready for implementation)
 - **Contrel uD3h**
 - **Diris A10**
 - **Lovato DMG800**
-- **Lovato DMG210** 
 - **Lovato DMG6**
 - **RedZ LKM144**
 - **Schneider IEM3250**
