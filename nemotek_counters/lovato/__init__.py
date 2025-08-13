@@ -10,21 +10,21 @@ Available counters:
 """
 
 from .dmg210 import (
-    ConfiguracaoContador,
-    ConfiguracaoModbusTCP,
-    ConfiguracaoModbusRTU,
-    GestorErrosModbus,
-    ColectorDadosDMG210
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    ModbusErrorManager,
+    DMG210DataCollector
 )
 
 # TODO: Implement remaining counter classes and functions
-# from .dmg800 import ColectorDadosDMG800
-# from .dmg6 import ColectorDadosDMG6
+# from .dmg800 import DMG800DataCollector
+# from .dmg6 import DMG6DataCollector
 
 __all__ = [
-    'ConfiguracaoContador',
-    'ConfiguracaoModbusTCP',
-    'ConfiguracaoModbusRTU',
-    'GestorErrosModbus',
-    'ColectorDadosDMG210'
+    'CounterConfiguration',
+    'ModbusTCPConfiguration',
+    'ModbusRTUConfiguration',
+    'ModbusErrorManager',
+    'DMG210DataCollector'
 ]

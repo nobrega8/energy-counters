@@ -137,45 +137,45 @@ if collector.connect():
 ### Lovato DMG210 Example
 ```python
 from nemotek_counters.lovato.dmg210 import (
-    ConfiguracaoContador,
-    ConfiguracaoModbusTCP,
-    ConfiguracaoModbusRTU,
-    ColectorDadosDMG210
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    DMG210DataCollector
 )
 
 # Configure the counter  
-config_contador = ConfiguracaoContador(
-    id_contador=115,
-    id_unidade=81,  # Modbus address
-    nome_contador="Geral #115",
-    id_empresa="MinhaEmpresa"
+counter_config = CounterConfiguration(
+    counter_id=115,
+    unit_id=81,  # Modbus address
+    counter_name="General #115",
+    company_id="MyCompany"
 )
 
 # Configure Modbus TCP (primary)
-config_tcp = ConfiguracaoModbusTCP(
+tcp_config = ModbusTCPConfiguration(
     host="172.16.5.11",
-    porta=502
+    port=502
 )
 
 # Configure Modbus RTU (fallback)
-config_rtu = ConfiguracaoModbusRTU(
-    porta="/dev/ttyNS0",
-    velocidade=9600
+rtu_config = ModbusRTUConfiguration(
+    port="/dev/ttyNS0",
+    baudrate=9600
 )
 
 # Create collector with both TCP and RTU support
-colector = ColectorDadosDMG210(config_contador, config_tcp, config_rtu)
+collector = DMG210DataCollector(counter_config, tcp_config, rtu_config)
 
 # Connect and read data (tries TCP first, RTU as fallback)
-if colector.ligar():
-    dados = colector.recolher_dados()
-    if dados:
-        print(f"Voltage L1: {dados['vl1']}V")
-        print(f"Current L1: {dados['il1']}A") 
-        print(f"Power P1: {dados['p1']}kW")
-        print(f"Frequency: {dados['freq']}Hz")
-        print(f"Active Energy: {dados['energiaActiva']}kWh")
-    colector.desligar()
+if collector.connect():
+    data = collector.collect_data()
+    if data:
+        print(f"Voltage L1: {data['vl1']}V")
+        print(f"Current L1: {data['il1']}A") 
+        print(f"Power P1: {data['p1']}kW")
+        print(f"Frequency: {data['freq']}Hz")
+        print(f"Active Energy: {data['activeEnergy']}kWh")
+    collector.disconnect()
 ```
 
 ## Supported Counters
