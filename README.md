@@ -2,7 +2,7 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://pypi.org/project/nemotek-counters/)
 [![Maintained](https://img.shields.io/badge/maintained-yes%2C%202025-success.svg)](https://github.com/nemotek/nemotek-counters)
-![Carlo Gavazzi](https://img.shields.io/badge/support-Carlo%20Gavazzi-redy.svg)
+![Carlo Gavazzi](https://img.shields.io/badge/support-Carlo%20Gavazzi-red.svg)
 ![Lovato](https://img.shields.io/badge/support-Lovato-orange.svg)
 ![Diris](https://img.shields.io/badge/support-Diris-lightgrey.svg)
 ![RedZ](https://img.shields.io/badge/support-RedZ-yellow.svg)
