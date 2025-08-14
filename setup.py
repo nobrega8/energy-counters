@@ -12,7 +12,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="energy-counters",
-    version="1.0.0",
+    version="1.2.1",
     author="nobrega8",
     author_email="afonsognonrega@gmail.com",
     description="A Python library for reading data from various electrical energy counters",
