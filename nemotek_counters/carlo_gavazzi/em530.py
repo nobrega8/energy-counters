@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Data collection from Carlo Gavazzi EM530 counter via Modbus RTU
-Based on Node-Red implementation by @PedroFerreira
 """
 
 import time
@@ -332,7 +331,7 @@ def main():
 
     # Modbus TCP configuration (adjust as needed)
     modbus_tcp_config = ModbusTCPConfiguration(
-        host="192.168.1.100",  # Adjust to your counter's IP
+        host="192.162.10.10",  # Adjust to your counter's IP
         port=502
     )
 

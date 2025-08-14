@@ -29,7 +29,7 @@ class ModbusTCPConfiguration:
     Configuration for Modbus TCP connections. Default values are set
     to commonly used settings, but can be overridden as needed.
     """
-    host: str = "192.168.1.100"  # Default host - can be overridden
+    host: str = "192.162.10.10"  # Default host - can be overridden
     port: int = 502              # Standard Modbus TCP port
     timeout: float = 4.0         # Connection timeout in seconds
 

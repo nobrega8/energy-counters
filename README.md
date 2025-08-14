@@ -101,7 +101,7 @@ counter_config = CounterConfiguration(
 
 # Configure Modbus TCP connection
 tcp_config = ModbusTCPConfiguration(
-    host="192.168.1.100",  # IP address of the counter
+    host="192.162.10.10",  # IP address of the counter
     port=502
 )
 
@@ -128,7 +128,7 @@ from nemotek_counters.carlo_gavazzi.em530 import (
 )
 
 counter_config = CounterConfiguration(167, 100, "TestCounter", "MyCompany")
-tcp_config = ModbusTCPConfiguration("192.168.1.100", 502)
+tcp_config = ModbusTCPConfiguration("192.162.10.10", 502)
 rtu_config = ModbusRTUConfiguration("/dev/ttyNS0", 9600)
 
 # Create collector with both configurations (tries TCP first, then RTU)
@@ -255,7 +255,7 @@ rtu_config = ModbusRTUConfiguration(
 
 # Optional TCP configuration (fallback)
 tcp_config = ModbusTCPConfiguration(
-    host="192.168.1.100",
+    host="192.162.10.10",
     port=502
 )
 
@@ -301,7 +301,7 @@ counter_config = CounterConfiguration(
 
 # Configure Modbus TCP connection (primary)
 tcp_config = ModbusTCPConfiguration(
-    host="192.168.1.100",
+    host="192.162.10.10",
     port=502,
     timeout=4.0
 )

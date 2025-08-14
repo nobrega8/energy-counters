@@ -80,7 +80,7 @@ counter_config = CounterConfiguration(
 
 # Configure Modbus TCP
 modbus_config = ModbusTCPConfiguration(
-    host="192.168.1.200",
+    host="192.162.10.10",
     port=502
 )
 
