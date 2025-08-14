@@ -1,11 +1,16 @@
 # Energy Counters Library
 
-[![PyPI version](https://badge.fury.io/py/energy-counters.svg)](https://badge.fury.io/py/energy-counters)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://pypi.org/project/energy-counters/)
-[![Downloads](https://static.pepy.tech/badge/energy-counters)](https://pepy.tech/project/energy-counters)
+[![PyPI](https://img.shields.io/pypi/v/energy-counters.svg)](https://pypi.org/project/energy-counters/)
+[![Python](https://img.shields.io/pypi/pyversions/energy-counters.svg)](https://pypi.org/project/energy-counters/)
+[![Wheel](https://img.shields.io/pypi/wheel/energy-counters.svg)](https://pypi.org/project/energy-counters/)
+[![Status](https://img.shields.io/pypi/status/energy-counters.svg)](https://pypi.org/project/energy-counters/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Maintained](https://img.shields.io/badge/maintained-yes%2C%202025-success.svg)](https://github.com/nobrega8/energy-counters)
 
+[![Downloads](https://static.pepy.tech/badge/energy-counters)](https://pepy.tech/project/energy-counters)
+
+[![Build](https://img.shields.io/github/actions/workflow/status/nobrega8/energy-counters/python-package.yml?branch=main)](https://github.com/nobrega8/energy-counters/actions)
+[![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ![Carlo Gavazzi](https://img.shields.io/badge/support-Carlo%20Gavazzi-lightgrey.svg)
 ![Lovato](https://img.shields.io/badge/support-Lovato-lightgrey.svg)
@@ -13,8 +18,6 @@
 ![RedZ](https://img.shields.io/badge/support-RedZ-lightgrey.svg)
 ![Contrel](https://img.shields.io/badge/support-Contrel-lightgrey.svg)
 ![Schneider](https://img.shields.io/badge/support-Schneider-lightgrey.svg)
-
-
 
 A Python library for reading data from various electrical energy counters including Carlo Gavazzi, Contrel, Diris, Lovato, RedZ, and Schneider devices.
 
