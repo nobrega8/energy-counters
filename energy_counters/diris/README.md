@@ -65,8 +65,8 @@ The A10 implementation reads three separate register blocks:
 #### Usage Example
 
 ```python
-from nemotek_counters.common import CounterConfiguration, ModbusTCPConfiguration
-from nemotek_counters.diris.a10 import A10DataCollector
+from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
+from energy_counters.diris.a10 import A10DataCollector
 
 # Configure counter
 counter_config = CounterConfiguration(

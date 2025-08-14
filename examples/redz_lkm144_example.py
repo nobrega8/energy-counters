@@ -7,7 +7,7 @@ based on the Node-RED implementation.
 
 import time
 import json
-from nemotek_counters.redz.lkm144 import (
+from energy_counters.redz.lkm144 import (
     LKM144DataCollector,
     CounterConfiguration,
     ModbusRTUConfiguration,

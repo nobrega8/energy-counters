@@ -61,8 +61,8 @@ The uD3h implementation reads three separate register blocks:
 #### Usage Example
 
 ```python
-from nemotek_counters.common import CounterConfiguration, ModbusTCPConfiguration
-from nemotek_counters.contrel.ud3h import UD3hDataCollector
+from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
+from energy_counters.contrel.ud3h import UD3hDataCollector
 
 # Configure counter
 counter_config = CounterConfiguration(

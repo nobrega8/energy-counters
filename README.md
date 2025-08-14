@@ -1,4 +1,4 @@
-# Nemotek Counters Library
+# Energy Counters Library
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://pypi.org/project/nemotek-counters/)
 [![Maintained](https://img.shields.io/badge/maintained-yes%2C%202025-success.svg)](https://github.com/Nemotek-GTC/counters)
@@ -29,7 +29,7 @@ A Python library for reading data from various electrical energy counters includ
 ## Installation
 
 ```bash
-pip install nemotek-counters
+pip install energy-counters
 ```
 
 Or for development:
@@ -40,19 +40,21 @@ pip install -e .
 ## Usage
 
 ### Import the library
+
 ```python
-import nemotek_counters
-from nemotek_counters import carlo_gavazzi
-from nemotek_counters.carlo_gavazzi import em530
+import energy_counters
+from energy_counters import carlo_gavazzi
+from energy_counters.carlo_gavazzi import em530
 ```
 
 ### Carlo Gavazzi EM530 Example
 
 #### RTU (Serial) Connection
+
 ```python
-from nemotek_counters.carlo_gavazzi.em530 import (
-    CounterConfiguration, 
-    ModbusRTUConfiguration, 
+from energy_counters.carlo_gavazzi.em530 import (
+    CounterConfiguration,
+    ModbusRTUConfiguration,
     EM530DataCollector
 )
 
@@ -84,10 +86,11 @@ if collector.connect():
 ```
 
 #### TCP Connection
+
 ```python
-from nemotek_counters.carlo_gavazzi.em530 import (
-    CounterConfiguration, 
-    ModbusTCPConfiguration, 
+from energy_counters.carlo_gavazzi.em530 import (
+    CounterConfiguration,
+    ModbusTCPConfiguration,
     EM530DataCollector
 )
 
@@ -119,9 +122,10 @@ if collector.connect():
 ```
 
 #### TCP with RTU Fallback
+
 ```python
-from nemotek_counters.carlo_gavazzi.em530 import (
-    CounterConfiguration, 
+from energy_counters.carlo_gavazzi.em530 import (
+    CounterConfiguration,
     ModbusTCPConfiguration,
     ModbusRTUConfiguration,
     EM530DataCollector
@@ -132,9 +136,9 @@ tcp_config = ModbusTCPConfiguration("192.162.10.10", 502)
 rtu_config = ModbusRTUConfiguration("/dev/ttyNS0", 9600)
 
 # Create collector with both configurations (tries TCP first, then RTU)
-collector = EM530DataCollector(counter_config, 
-                             modbus_tcp_config=tcp_config,
-                             modbus_rtu_config=rtu_config)
+collector = EM530DataCollector(counter_config,
+                               modbus_tcp_config=tcp_config,
+                               modbus_rtu_config=rtu_config)
 
 if collector.connect():
     data = collector.collect_data()
@@ -144,8 +148,9 @@ if collector.connect():
 ```
 
 ### Lovato DMG210 Example
+
 ```python
-from nemotek_counters.lovato.dmg210 import (
+from energy_counters.lovato.dmg210 import (
     CounterConfiguration,
     ModbusTCPConfiguration,
     ModbusRTUConfiguration,
@@ -180,7 +185,7 @@ if collector.connect():
     data = collector.collect_data()
     if data:
         print(f"Voltage L1: {data['vl1']}V")
-        print(f"Current L1: {data['il1']}A") 
+        print(f"Current L1: {data['il1']}A")
         print(f"Power P1: {data['p1']}kW")
         print(f"Frequency: {data['freq']}Hz")
         print(f"Active Energy: {data['activeEnergy']}kWh")
@@ -188,8 +193,9 @@ if collector.connect():
 ```
 
 ### Diris A10 Example
+
 ```python
-from nemotek_counters.diris.a10 import (
+from energy_counters.diris.a10 import (
     CounterConfiguration,
     ModbusTCPConfiguration,
     A10DataCollector
@@ -231,8 +237,9 @@ if collector.connect():
 ```
 
 ### RedZ LKM144 Example
+
 ```python
-from nemotek_counters.redz.lkm144 import (
+from energy_counters.redz.lkm144 import (
     CounterConfiguration,
     ModbusRTUConfiguration,
     ModbusTCPConfiguration,
@@ -284,7 +291,7 @@ if collector.connect():
 
 ### Contrel uD3h Example
 ```python
-from nemotek_counters.contrel.ud3h import (
+from energy_counters.contrel.ud3h import (
     CounterConfiguration,
     ModbusTCPConfiguration,
     ModbusRTUConfiguration,

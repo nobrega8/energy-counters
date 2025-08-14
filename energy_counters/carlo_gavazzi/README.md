@@ -61,8 +61,8 @@ The EM530 implementation reads four separate register blocks:
 #### Usage Example
 
 ```python
-from nemotek_counters.common import CounterConfiguration, ModbusTCPConfiguration
-from nemotek_counters.carlo_gavazzi.em530 import EM530DataCollector
+from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
+from energy_counters.carlo_gavazzi.em530 import EM530DataCollector
 
 # Configure counter
 counter_config = CounterConfiguration(

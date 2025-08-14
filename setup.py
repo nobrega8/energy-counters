@@ -11,14 +11,14 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
-    name="nemotek-counters",
+    name="energy-counters",
     version="1.0.0",
-    author="Nemotek",
-    author_email="info@nemotek.pt",
+    author="nobrega8",
+    author_email="afonsognonrega@gmail.com",
     description="A Python library for reading data from various electrical energy counters",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Nemotek-GTC/counters",
+    url="https://github.com/nobrega8/energy-counters",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -37,7 +37,7 @@ setup(
     install_requires=requirements,
     keywords="energy meters, counters, modbus, carlo gavazzi, lovato, schneider",
     project_urls={
-        "Bug Reports": "https://github.com/Nemotek-GTC/counters/issues",
-        "Source": "https://github.com/Nemotek-GTC/counters",
+        "Bug Reports": "https://github.com/nobrega8/energy-counters/issues",
+        "Source": "https://github.com/nobrega8/energy-counters",
     },
 )

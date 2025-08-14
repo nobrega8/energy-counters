@@ -69,8 +69,8 @@ The DMG6 implementation reads three separate register blocks:
 #### Usage Example
 
 ```python
-from nemotek_counters.common import CounterConfiguration, ModbusTCPConfiguration
-from nemotek_counters.lovato.dmg6 import DMG6DataCollector
+from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
+from energy_counters.lovato.dmg6 import DMG6DataCollector
 
 # Configure counter
 counter_config = CounterConfiguration(
@@ -162,8 +162,8 @@ The DMG210 implementation reads three separate register blocks:
 #### Usage Example
 
 ```python
-from nemotek_counters.common import CounterConfiguration, ModbusTCPConfiguration
-from nemotek_counters.lovato.dmg210 import DMG210DataCollector
+from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
+from energy_counters.lovato.dmg210 import DMG210DataCollector
 
 # Configure counter
 counter_config = CounterConfiguration(

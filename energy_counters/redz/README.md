@@ -53,8 +53,8 @@ The LKM144 reads 48 registers (96 bytes) in one operation, which are parsed as 2
 #### Usage Example
 
 ```python
-from nemotek_counters.common import CounterConfiguration, ModbusRTUConfiguration
-from nemotek_counters.redz.lkm144 import LKM144DataCollector
+from energy_counters.common import CounterConfiguration, ModbusRTUConfiguration
+from energy_counters.redz.lkm144 import LKM144DataCollector
 
 # Configure counter
 counter_config = CounterConfiguration(

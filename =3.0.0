@@ -1,8 +1,0 @@
-Defaulting to user installation because normal site-packages is not writeable
-Collecting pymodbus
-  Downloading pymodbus-3.11.1-py3-none-any.whl.metadata
-     - 15.7 kB 124.2 MB/s 0:00:00
-Downloading pymodbus-3.11.1-py3-none-any.whl
-   - 166.4 kB 52.0 MB/s 0:00:00
-Installing collected packages: pymodbus
-Successfully installed pymodbus-3.11.1

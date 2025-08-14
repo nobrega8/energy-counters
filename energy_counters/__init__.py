@@ -5,9 +5,9 @@ A Python library for reading data from various electrical energy counters
 including Carlo Gavazzi, Contrel, Diris, Lovato, RedZ, and Schneider devices.
 
 Usage:
-    import nemotek_counters
-    from nemotek_counters import carlo_gavazzi
-    from nemotek_counters.carlo_gavazzi import em530
+    import energyenergy_counters
+    from energyenergy_counters import carlo_gavazzi
+    from energyenergy_counters.carlo_gavazzi import em530
 """
 
 __version__ = "1.0.0"
