@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Data collection from Lovato DMG210 counter via Modbus RTU/TCP
-Based on Node-Red flow and Carlo Gavazzi EM530 implementation
+Based on Node-Red flow provided in issue #19
 """
 
 import time
@@ -39,14 +39,14 @@ class ModbusErrorManager:
         Process error following Node-RED logic:
         - Increment counter if there's an error
         - Reset if there's no error
-        - Consider error only if count > 2
+        - Consider error only if count > 6 (based on Node-RED flow)
         """
         if has_error:
             self.error_count += 1
         else:
             self.error_count = 0
 
-        current_error_state = self.error_count > 2
+        current_error_state = self.error_count > 6
 
         # Report by exception - only report if state changed
         if current_error_state != self.last_error_state:
@@ -60,11 +60,11 @@ class ModbusErrorManager:
         timestamp = datetime.now().isoformat()
 
         if is_error:
-            topic = f"{self.company_id} Communication Error {self.counter_name} INACTIVE"
-            message = f"{self.company_id} communication with counter {self.counter_name} is INACTIVE since {timestamp}"
+            topic = f"{self.company_id} Commm Error {self.counter_name} DOWN"
+            message = f"{self.company_id} communication with the counter {self.counter_name} is DOWN since {timestamp}"
         else:
-            topic = f"{self.company_id} Communication Error {self.counter_name} Restored"
-            message = f"{self.company_id} communication with counter {self.counter_name} was restored at {timestamp}"
+            topic = f"{self.company_id} Commm Error {self.counter_name} Restored"
+            message = f"{self.company_id} communication with the counter {self.counter_name} has restored at {timestamp}"
 
         return {
             "topic": topic,
@@ -230,6 +230,7 @@ class DMG210DataCollector:
     def _format_data(self, data01: list, data02: list, data03: list, timestamp: str) -> Dict[str, Any]:
         """
         Format data according to Node-RED DMG210 configuration
+        Based on the buffer parsers in the Node-RED flow
         """
 
         def uint32_from_registers(high_reg: int, low_reg: int) -> int:
@@ -250,7 +251,7 @@ class DMG210DataCollector:
             "counterId": str(self.counter_config.counter_id),
             "counterName": self.counter_config.counter_name,
 
-            # Instantaneous data (data01) - according to instant parser
+            # Instantaneous data (data01) - based on second buffer parser
             # L-N Voltages (V) - uint32be scale 0.01
             "vl1": round(uint32_from_registers(data01[0], data01[1]) * 0.01, 2),
             "vl2": round(uint32_from_registers(data01[2], data01[3]) * 0.01, 2),
@@ -267,11 +268,11 @@ class DMG210DataCollector:
             "vl31": round(uint32_from_registers(data01[16], data01[17]) * 0.01, 2),
 
             # Phase Powers (kW) - int32be scale 0.01
-            "p1": round(int32_from_registers(data01[18], data01[19]) * 0.01, 2),
-            "p2": round(int32_from_registers(data01[20], data01[21]) * 0.01, 2),
-            "p3": round(int32_from_registers(data01[22], data01[23]) * 0.01, 2),
+            "pl1": round(int32_from_registers(data01[18], data01[19]) * 0.01, 2),
+            "pl2": round(int32_from_registers(data01[20], data01[21]) * 0.01, 2),
+            "pl3": round(int32_from_registers(data01[22], data01[23]) * 0.01, 2),
 
-            # Equivalent data (data02) - according to instant parser
+            # Frequency and equivalent data (data02) - based on instant parser
             # Frequency (Hz) - uint32be scale 0.01
             "freq": round(uint32_from_registers(data02[0], data02[1]) * 0.01, 2),
 
@@ -280,27 +281,31 @@ class DMG210DataCollector:
             "veql": round(uint32_from_registers(data02[4], data02[5]) * 0.01, 2),
             "ieq": round(uint32_from_registers(data02[6], data02[7]) * 0.0001, 4),
 
-            # Equivalent Powers (kW/kVAr/kVA)
-            "peq": round(int32_from_registers(data02[8], data02[9]) * 0.01, 2),
-            "qeq": round(int32_from_registers(data02[10], data02[11]) * 0.01, 2),
-            "seq": round(uint32_from_registers(data02[12], data02[13]) * 0.01, 2),
+            # Equivalent Powers (kW/kVAr/kVA) - int32be/uint32be scale 0.01
+            "paeq": round(int32_from_registers(data02[8], data02[9]) * 0.01, 2),
+            "qaeq": round(int32_from_registers(data02[10], data02[11]) * 0.01, 2),
+            "saeq": round(uint32_from_registers(data02[12], data02[13]) * 0.01, 2),
             "pfeq": round(uint32_from_registers(data02[14], data02[15]) * 0.0001, 4),
 
-            # Voltage THD (%)
+            # Additional fields from Node-RED parser
+            "assN": round(uint32_from_registers(data02[16], data02[17]) * 0.01, 2),
+            "assIn": round(uint32_from_registers(data02[18], data02[19]) * 0.01, 2),
+            "iln": round(uint32_from_registers(data02[20], data02[21]) * 0.01, 2),
+
+            # Voltage THD (%) - uint32be scale 0.01
             "thdV1": round(uint32_from_registers(data02[26], data02[27]) * 0.01, 2),
             "thdV2": round(uint32_from_registers(data02[28], data02[29]) * 0.01, 2),
             "thdV3": round(uint32_from_registers(data02[30], data02[31]) * 0.01, 2),
 
-            # Current THD (%)
+            # Current THD (%) - uint32be scale 0.01
             "thdIL1": round(uint32_from_registers(data02[32], data02[33]) * 0.01, 2),
             "thdIL2": round(uint32_from_registers(data02[34], data02[35]) * 0.01, 2),
             "thdIL3": round(uint32_from_registers(data02[36], data02[37]) * 0.01, 2),
 
-            # Energies (data03) - according to energy parser
-            # int32be scale 0.1
-            "activeEnergy": round(int32_from_registers(data03[0], data03[1]) * 0.1, 1),
-            "reactiveEnergy": round(int32_from_registers(data03[4], data03[5]) * 0.1, 1),
-            "apparentEnergy": round(int32_from_registers(data03[8], data03[9]) * 0.1, 1),
+            # Energies (data03) - based on energy parser int32be scale 0.01
+            "energyActive": round(int32_from_registers(data03[0], data03[1]) * 0.01, 1),
+            "energyReactive": round(int32_from_registers(data03[4], data03[5]) * 0.01, 1),
+            "energyApparent": round(int32_from_registers(data03[8], data03[9]) * 0.01, 1),
         }
 
 
@@ -308,9 +313,9 @@ def main():
     """Main function for testing"""
     # Counter configuration (adjust as needed)
     counter_config = CounterConfiguration(
-        counter_id=115,
-        unit_id=81,  # Modbus address of the counter
-        counter_name="General #115",
+        counter_id=117,
+        unit_id=83,  # Modbus address of the counter (from Node-RED flow)
+        counter_name="UPS Estatica",
         company_id="MyCompany"
     )
 
