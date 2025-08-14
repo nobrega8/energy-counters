@@ -101,7 +101,7 @@ For detailed usage examples and complete documentation for each counter, see the
 | **Carlo Gavazzi** | EM530 | **Implemented** | Yes | Yes | Full energy monitoring, fallback support |
 | **Lovato** | DMG210 | **Implemented** | Yes | Yes | Complete energy data collection, dual communication |
 | **Lovato** | DMG800 | **Planned** | - | - | Module structure ready |
-| **Lovato** | DMG6 | **Planned** | - | - | Module structure ready |
+| **Lovato** | DMG6 | **Implemented** | Yes | Yes | Complete energy data collection, dual communication |
 | **Contrel** | uD3h | **Implemented** | Yes | Yes | Complete energy monitoring, dual communication |
 | **Diris** | A10 | **Implemented** | Yes | Yes | Complete energy monitoring, THD analysis, dual communication |
 | **RedZ** | LKM144 | **Implemented** | Yes | Yes | Complete energy monitoring, dual communication |
