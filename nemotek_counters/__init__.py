@@ -21,6 +21,7 @@ from . import diris
 from . import lovato
 from . import redz
 from . import schneider
+from . import common
 
 __all__ = [
     'carlo_gavazzi',
@@ -28,5 +29,6 @@ __all__ = [
     'diris',
     'lovato',
     'redz', 
-    'schneider'
+    'schneider',
+    'common'
 ]
