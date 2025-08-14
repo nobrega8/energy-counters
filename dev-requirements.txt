@@ -1,0 +1,19 @@
+# Development Dependencies
+# Install with: pip install -r dev-requirements.txt
+
+# Core dependencies (already in pyproject.toml)
+pyserial
+pymodbus
+
+# Development tools
+black>=22.0.0          # Code formatting
+flake8>=4.0.0          # Linting
+mypy>=0.910            # Type checking
+isort>=5.10.0          # Import sorting
+
+# Documentation
+sphinx>=4.0.0          # Documentation generation (optional)
+sphinx-rtd-theme       # ReadTheDocs theme (optional)
+
+# Development utilities
+pre-commit>=2.15.0     # Git hooks (optional)

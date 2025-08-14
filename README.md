@@ -126,4 +126,29 @@ MIT License
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions to the Energy Counters Library! Whether you're fixing bugs, adding new counter support, improving documentation, or suggesting features, your help is appreciated.
+
+### Quick Start for Contributors
+
+1. **Fork the repository** and clone your fork
+2. **Set up the development environment** (see [CONTRIBUTING.md](CONTRIBUTING.md))
+3. **Create a feature branch** for your changes
+4. **Make your changes** following our coding standards
+5. **Test thoroughly** with actual hardware when possible
+6. **Submit a pull request** with a clear description
+
+### What We Need Help With
+
+- **New Counter Support:** Implementing support for additional energy meter models
+- **Documentation:** Improving guides, examples, and API documentation
+- **Testing:** Adding test coverage and validation with different hardware
+- **Bug Fixes:** Fixing issues reported by the community
+- **Performance:** Optimizing data collection and communication efficiency
+
+### Detailed Guidelines
+
+For comprehensive contribution guidelines, development setup, coding standards, and implementation patterns, please see our [**Contributing Guide**](CONTRIBUTING.md).
+
+### Adding New Counter Support
+
+We especially welcome contributions that add support for new energy counter models. Our library follows a consistent pattern that makes it straightforward to add new devices. Check the [Counter Implementation Guidelines](CONTRIBUTING.md#implementing-new-counter-support) for details.
