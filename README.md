@@ -9,9 +9,6 @@
 
 [![Downloads](https://static.pepy.tech/badge/energy-counters)](https://pepy.tech/project/energy-counters)
 
-[![Build](https://img.shields.io/github/actions/workflow/status/nobrega8/energy-counters/python-package.yml?branch=main)](https://github.com/nobrega8/energy-counters/actions)
-[![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
 ![Carlo Gavazzi](https://img.shields.io/badge/support-Carlo%20Gavazzi-lightgrey.svg)
 ![Lovato](https://img.shields.io/badge/support-Lovato-lightgrey.svg)
 ![Diris](https://img.shields.io/badge/support-Diris-lightgrey.svg)
