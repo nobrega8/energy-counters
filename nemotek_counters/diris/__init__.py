@@ -4,10 +4,21 @@ Diris Counter Modules
 This module provides interfaces for Diris energy meters and counters.
 
 Available counters:
-- A10: (To be implemented)
+- A10: Energy meter with Modbus TCP/RTU support
 """
 
-# TODO: Implement A10 counter class and functions
-# from .a10 import A10DataCollector
+from .a10 import (
+    A10DataCollector,
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    ModbusErrorManager
+)
 
-__all__ = []
+__all__ = [
+    "A10DataCollector",
+    "CounterConfiguration", 
+    "ModbusTCPConfiguration",
+    "ModbusRTUConfiguration",
+    "ModbusErrorManager"
+]
