@@ -2,12 +2,14 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://pypi.org/project/nemotek-counters/)
 [![Maintained](https://img.shields.io/badge/maintained-yes%2C%202025-success.svg)](https://github.com/nemotek/nemotek-counters)
-![Carlo Gavazzi](https://img.shields.io/badge/support-Carlo%20Gavazzi-red.svg)
-![Lovato](https://img.shields.io/badge/support-Lovato-orange.svg)
-![Diris](https://img.shields.io/badge/support-Diris-lightgrey.svg)
-![RedZ](https://img.shields.io/badge/support-RedZ-yellow.svg)
-![Contrel](https://img.shields.io/badge/support-Contrel-darkgreen.svg)
-![Schneider](https://img.shields.io/badge/support-Schneider-darkgreen.svg)
+
+![Carlo Gavazzi](https://img.shields.io/badge/support-Carlo%20Gavazzi-red.svg?logo=powerbi&logoColor=white)
+![Lovato](https://img.shields.io/badge/support-Lovato-orange.svg?logo=lightning&logoColor=white)
+![Diris](https://img.shields.io/badge/support-Diris-lightgrey.svg?logo=eclipsemosquitto&logoColor=black)
+![RedZ](https://img.shields.io/badge/support-RedZ-yellow.svg?logo=zigbee&logoColor=black)
+![Contrel](https://img.shields.io/badge/support-Contrel-darkgreen.svg?logo=modbus&logoColor=white)
+![Schneider](https://img.shields.io/badge/support-Schneider-darkgreen.svg?logo=schneider%20electric&logoColor=white)
+
 
 
 
