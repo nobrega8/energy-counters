@@ -283,39 +283,39 @@ class UD3hDataCollector:
         enS = uint32_from_registers(data03[4], data03[5])  # offset 8/2 = 4
 
         return {
-            "companyID": self.counter_config.company_id,
-            "ts": timestamp,
-            "counterID": str(self.counter_config.counter_id),
+            "companyId": self.counter_config.company_id,
+            "timestamp": timestamp,
+            "counterId": str(self.counter_config.counter_id),
             "counterName": self.counter_config.counter_name,
 
             # L-L Voltages (V) - scale 1
-            "vl12": f"{vl12:.2f}",
-            "vl23": f"{vl23:.2f}",
-            "vl31": f"{vl31:.2f}",
+            "voltageL12": f"{vl12:.2f}",
+            "voltageL23": f"{vl23:.2f}",
+            "voltageL31": f"{vl31:.2f}",
             
             # L-N Voltages (V) - scale 1
-            "vl1": f"{vl1:.2f}",
-            "vl2": f"{vl2:.2f}",
-            "vl3": f"{vl3:.2f}",
+            "voltageL1": f"{vl1:.2f}",
+            "voltageL2": f"{vl2:.2f}",
+            "voltageL3": f"{vl3:.2f}",
 
             # Currents (A) - scale 0.001
-            "il1": f"{(il1 * 0.001):.2f}",
-            "il2": f"{(il2 * 0.001):.2f}",
-            "il3": f"{(il3 * 0.001):.2f}",
+            "currentL1": f"{(il1 * 0.001):.2f}",
+            "currentL2": f"{(il2 * 0.001):.2f}",
+            "currentL3": f"{(il3 * 0.001):.2f}",
 
             # Powers per phase (W) - scale 1
-            "pl1": f"{p1:.2f}",
-            "pl2": f"{p2:.2f}",
-            "pl3": f"{p3:.2f}",
+            "powerL1": f"{p1:.2f}",
+            "powerL2": f"{p2:.2f}",
+            "powerL3": f"{p3:.2f}",
 
             # Total powers - scale 1
-            "paeq": f"{peq:.2f}",
-            "qaeq": f"{qeq:.2f}",
-            "saeq": f"{seq:.2f}",
-            "pfeq": f"{(pfeq * 0.001):.2f}",
+            "activePower": f"{peq:.2f}",
+            "reactivePower": f"{qeq:.2f}",
+            "apparentPower": f"{seq:.2f}",
+            "powerFactor": f"{(pfeq * 0.001):.2f}",
             
             # Frequency (Hz) - scale 0.001
-            "freq": f"{(f * 0.001):.2f}",
+            "frequency": f"{(f * 0.001):.2f}",
 
             # Energies - scale 0.1
             "energyActive": f"{(enP * 0.1):.1f}",
@@ -323,12 +323,12 @@ class UD3hDataCollector:
             "energyApparent": f"{(enS * 0.1):.1f}",
 
             # THD values (hardcoded to '0' as per Node-RED)
-            "thdV1": "0",
-            "thdV2": "0", 
-            "thdV3": "0",
-            "thdIL1": "0",
-            "thdIL2": "0",
-            "thdIL3": "0"
+            "thdVoltageL1": "0",
+            "thdVoltageL2": "0", 
+            "thdVoltageL3": "0",
+            "thdCurrentL1": "0",
+            "thdCurrentL2": "0",
+            "thdCurrentL3": "0"
         }
 
 
