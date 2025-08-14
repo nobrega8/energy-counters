@@ -1,7 +1,7 @@
 # Nemotek Counters Library
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://pypi.org/project/nemotek-counters/)
-[![Maintained](https://img.shields.io/badge/maintained-yes%2C%202025-success.svg)](https://github.com/nemotek/nemotek-counters)
+[![Maintained](https://img.shields.io/badge/maintained-yes%2C%202025-success.svg)](https://github.com/Nemotek-GTC/counters)
 
 
 ![Carlo Gavazzi](https://img.shields.io/badge/support-Carlo%20Gavazzi-lightgrey.svg)
@@ -18,13 +18,13 @@ A Python library for reading data from various electrical energy counters includ
 
 ## Features
 
-- 🔌 **Multiple Communication Protocols**: Support for both Modbus RTU (serial) and Modbus TCP connections
-- 🔄 **Automatic Fallback**: Intelligent switching between TCP and RTU when both are configured
-- 📊 **Comprehensive Data Collection**: Read voltage, current, power, energy, and frequency measurements
-- 🛠️ **Easy Configuration**: Simple dataclass-based configuration for counters and connections
-- 📝 **Detailed Logging**: Built-in logging for debugging and monitoring
-- 🐍 **Modern Python**: Written for Python 3.8+ with type hints and dataclasses
-- 🔧 **Extensible Design**: Easy to add support for new counter models
+- **Multiple Communication Protocols**: Support for both Modbus RTU (serial) and Modbus TCP connections
+- **Automatic Fallback**: Intelligent switching between TCP and RTU when both are configured
+- **Comprehensive Data Collection**: Read voltage, current, power, energy, and frequency measurements
+- **Easy Configuration**: Simple dataclass-based configuration for counters and connections
+- **Detailed Logging**: Built-in logging for debugging and monitoring
+- **Modern Python**: Written for Python 3.8+ with type hints and dataclasses
+- **Extensible Design**: Easy to add support for new counter models
 
 ## Installation
 
@@ -101,7 +101,7 @@ counter_config = CounterConfiguration(
 
 # Configure Modbus TCP connection
 tcp_config = ModbusTCPConfiguration(
-    host="192.168.1.100",  # IP address of the counter
+    host="192.162.10.10",  # IP address of the counter
     port=502
 )
 
@@ -128,7 +128,7 @@ from nemotek_counters.carlo_gavazzi.em530 import (
 )
 
 counter_config = CounterConfiguration(167, 100, "TestCounter", "MyCompany")
-tcp_config = ModbusTCPConfiguration("192.168.1.100", 502)
+tcp_config = ModbusTCPConfiguration("192.162.10.10", 502)
 rtu_config = ModbusRTUConfiguration("/dev/ttyNS0", 9600)
 
 # Create collector with both configurations (tries TCP first, then RTU)
@@ -255,7 +255,7 @@ rtu_config = ModbusRTUConfiguration(
 
 # Optional TCP configuration (fallback)
 tcp_config = ModbusTCPConfiguration(
-    host="192.168.1.100",
+    host="192.162.10.10",
     port=502
 )
 
@@ -282,25 +282,78 @@ if collector.connect():
     collector.disconnect()
 ```
 
+### Contrel uD3h Example
+```python
+from nemotek_counters.contrel.ud3h import (
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    UD3hDataCollector
+)
+
+# Configure the counter
+counter_config = CounterConfiguration(
+    counter_id=175,
+    unit_id=1,  # Modbus address
+    counter_name="MainMeter",
+    company_id="MyCompany"
+)
+
+# Configure Modbus TCP connection (primary)
+tcp_config = ModbusTCPConfiguration(
+    host="192.162.10.10",
+    port=502,
+    timeout=4.0
+)
+
+# Configure Modbus RTU connection (fallback)
+rtu_config = ModbusRTUConfiguration(
+    port="/dev/ttyNS0",
+    baudrate=9600
+)
+
+# Create collector with both TCP and RTU support
+collector = UD3hDataCollector(
+    counter_config,
+    modbus_tcp_config=tcp_config,
+    modbus_rtu_config=rtu_config
+)
+
+# Connect and read data (tries TCP first, RTU as fallback)
+if collector.connect():
+    data = collector.collect_data()
+    if data:
+        print(f"Counter: {data['counterName']}")
+        print(f"L-N Voltage L1: {data['vl1']}V")
+        print(f"L-L Voltage L12: {data['vl12']}V")
+        print(f"Current L1: {data['il1']}A")
+        print(f"Phase Power L1: {data['pl1']}W")
+        print(f"Total Active Power: {data['paeq']}W")
+        print(f"Frequency: {data['freq']}Hz")
+        print(f"Power Factor: {data['pfeq']}")
+        print(f"Active Energy: {data['energyActive']}Wh")
+    collector.disconnect()
+```
+
 ## Supported Counters
 
 | Brand | Model | Status | Modbus RTU | Modbus TCP | Features |
 |-------|-------|--------|------------|------------|----------|
-| **Carlo Gavazzi** | EM530 | ✅ **Implemented** | ✅ | ✅ | Full energy monitoring, fallback support |
-| **Lovato** | DMG210 | ✅ **Implemented** | ✅ | ✅ | Complete energy data collection, dual communication |
-| **Lovato** | DMG800 | 🚧 **Planned** | - | - | Module structure ready |
-| **Lovato** | DMG6 | 🚧 **Planned** | - | - | Module structure ready |
-| **Contrel** | uD3h | 🚧 **Planned** | - | - | Module structure ready |
-| **Diris** | A10 | ✅ **Implemented** | ✅ | ✅ | Complete energy monitoring, THD analysis, dual communication |
-| **RedZ** | LKM144 | ✅ **Implemented** | ✅ | ✅ | Complete energy monitoring, dual communication |
-| **Schneider** | IEM3250 | 🚧 **Planned** | - | - | Module structure ready |
-| **Schneider** | IEM3155 | 🚧 **Planned** | - | - | Module structure ready |
+| **Carlo Gavazzi** | EM530 | **Implemented** | Yes | Yes | Full energy monitoring, fallback support |
+| **Lovato** | DMG210 | **Implemented** | Yes | Yes | Complete energy data collection, dual communication |
+| **Lovato** | DMG800 | **Planned** | - | - | Module structure ready |
+| **Lovato** | DMG6 | **Planned** | - | - | Module structure ready |
+| **Contrel** | uD3h | **Implemented** | Yes | Yes | Complete energy monitoring, dual communication |
+| **Diris** | A10 | **Implemented** | Yes | Yes | Complete energy monitoring, THD analysis, dual communication |
+| **RedZ** | LKM144 | **Implemented** | Yes | Yes | Complete energy monitoring, dual communication |
+| **Schneider** | IEM3250 | **Planned** | - | - | Module structure ready |
+| **Schneider** | IEM3155 | **Planned** | - | - | Module structure ready |
 
 ### Implementation Status Legend
-- ✅ **Implemented**: Full functionality with comprehensive data collection
-- 🚧 **Planned**: Module structure exists, implementation pending
-- ✅ Modbus RTU/TCP: Protocol supported
-- 🔄 **Fallback Support**: Automatic failover between TCP and RTU connections
+- **Implemented**: Full functionality with comprehensive data collection
+- **Planned**: Module structure exists, implementation pending
+- **Modbus RTU/TCP**: Protocol supported
+- **Fallback Support**: Automatic failover between TCP and RTU connections
 
 ## Requirements
 

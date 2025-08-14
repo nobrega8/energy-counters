@@ -14,7 +14,7 @@ setup(
     name="nemotek-counters",
     version="1.0.0",
     author="Nemotek",
-    author_email="afonso.nobrega@nemotek.pt",
+    author_email="info@nemotek.pt",
     description="A Python library for reading data from various electrical energy counters",
     long_description=long_description,
     long_description_content_type="text/markdown",
