@@ -4,6 +4,15 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/nemotek-counters.svg)](https://pypi.org/project/nemotek-counters/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/nemotek/nemotek-counters/python-app.yml?branch=main)](https://github.com/nemotek/nemotek-counters/actions)
+[![Coverage Status](https://img.shields.io/codecov/c/github/nemotek/nemotek-counters)](https://codecov.io/gh/nemotek/nemotek-counters)
+[![Downloads](https://img.shields.io/pypi/dm/nemotek-counters.svg)](https://pypi.org/project/nemotek-counters/)
+[![Last Commit](https://img.shields.io/github/last-commit/nemotek/nemotek-counters)](https://github.com/nemotek/nemotek-counters/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues/nemotek/nemotek-counters)](https://github.com/nemotek/nemotek-counters/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/nemotek/nemotek-counters)](https://github.com/nemotek/nemotek-counters/pulls)
+[![Maintenance](https://img.shields.io/maintenance/yes/2025)](https://github.com/nemotek/nemotek-counters)
+[![Security: Bandit](https://img.shields.io/badge/security-bandit-yellowgreen)](https://bandit.readthedocs.io/en/latest/)
+
 
 A Python library for reading data from various electrical energy counters including Carlo Gavazzi, Contrel, Diris, Lovato, RedZ, and Schneider devices.
 
