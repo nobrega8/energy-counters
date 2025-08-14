@@ -2,12 +2,12 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://pypi.org/project/nemotek-counters/)
 [![Maintained](https://img.shields.io/badge/maintained-yes%2C%202025-success.svg)](https://github.com/nemotek/nemotek-counters)
-![Carlo Gavazzi](https://img.shields.io/badge/support-Carlo%20Gavazzi-lightgrey.svg)
-![Lovato](https://img.shields.io/badge/support-Lovato-lightgrey.svg)
+![Carlo Gavazzi](https://img.shields.io/badge/support-Carlo%20Gavazzi-redy.svg)
+![Lovato](https://img.shields.io/badge/support-Lovato-orange.svg)
 ![Diris](https://img.shields.io/badge/support-Diris-lightgrey.svg)
-![RedZ](https://img.shields.io/badge/support-RedZ-lightgrey.svg)
-![Contrel](https://img.shields.io/badge/support-Contrel-lightgrey.svg)
-![Schneider](https://img.shields.io/badge/support-Schneider-lightgrey.svg)
+![RedZ](https://img.shields.io/badge/support-RedZ-yellow.svg)
+![Contrel](https://img.shields.io/badge/support-Contrel-darkgreen.svg)
+![Schneider](https://img.shields.io/badge/support-Schneider-darkgreen.svg)
 
 
 
