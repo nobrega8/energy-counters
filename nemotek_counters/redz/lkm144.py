@@ -8,12 +8,14 @@ import time
 import json
 import logging
 from datetime import datetime
-from dataclasses import dataclass
 from typing import Optional, Dict, Any
 import serial
 from pymodbus.client.serial import ModbusSerialClient
 from pymodbus.client.tcp import ModbusTcpClient
 from pymodbus.exceptions import ModbusException, ConnectionException
+
+# Import shared configuration classes
+from ..common import CounterConfiguration, ModbusTCPConfiguration, ModbusRTUConfiguration
 
 # Event logging configuration
 logging.basicConfig(
@@ -21,34 +23,6 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class CounterConfiguration:
-    """Counter configuration"""
-    counter_id: int
-    unit_id: int
-    counter_name: str
-    company_id: str
-
-
-@dataclass
-class ModbusTCPConfiguration:
-    """Modbus TCP connection configuration"""
-    host: str = "192.168.1.100"
-    port: int = 502
-    timeout: float = 4.0
-
-
-@dataclass
-class ModbusRTUConfiguration:
-    """Modbus RTU connection configuration"""
-    port: str = "/dev/ttyNS0"
-    baudrate: int = 9600
-    data_bits: int = 8
-    parity: str = 'N'
-    stop_bits: int = 1
-    timeout: float = 4.0
 
 
 class ModbusErrorManager:
