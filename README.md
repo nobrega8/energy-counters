@@ -221,6 +221,58 @@ if collector.connect():
     collector.disconnect()
 ```
 
+### RedZ LKM144 Example
+```python
+from nemotek_counters.redz.lkm144 import (
+    CounterConfiguration,
+    ModbusRTUConfiguration,
+    ModbusTCPConfiguration,
+    LKM144DataCollector
+)
+
+# Configure the counter (matching Node-RED Red Z#10 setup)
+counter_config = CounterConfiguration(
+    counter_id=200,
+    unit_id=1,  # Modbus address
+    counter_name="e-Redes",
+    company_id="MyCompany"
+)
+
+# Configure Modbus RTU connection (primary for LKM144)
+rtu_config = ModbusRTUConfiguration(
+    port="/dev/ttyNS0",
+    baudrate=9600
+)
+
+# Optional TCP configuration (fallback)
+tcp_config = ModbusTCPConfiguration(
+    host="192.168.1.100",
+    port=502
+)
+
+# Create collector with RTU primary, TCP fallback
+collector = LKM144DataCollector(
+    counter_config,
+    modbus_tcp_config=tcp_config,
+    modbus_rtu_config=rtu_config
+)
+
+# Connect and read data
+if collector.connect():
+    data = collector.collect_data()
+    if data:
+        print(f"Counter: {data['counterName']}")
+        print(f"Voltage L1: {data['voltageL1']}")
+        print(f"Current L1: {data['currentL1']}")
+        print(f"Instantaneous Power: {data['instantaneousPower']}")
+        print(f"Active Energy: {data['energyActive']}")
+        print(f"Reactive Energy: {data['energyReactive']}")
+        print(f"Power Factor: {data['powerFactor']}")
+        print(f"Frequency: {data['frequency']}")
+        print(f"Meter Number: {data['meterNumber']}")
+    collector.disconnect()
+```
+
 ## Supported Counters
 
 | Brand | Model | Status | Modbus RTU | Modbus TCP | Features |
@@ -231,7 +283,7 @@ if collector.connect():
 | **Lovato** | DMG6 | 🚧 **Planned** | - | - | Module structure ready |
 | **Contrel** | uD3h | 🚧 **Planned** | - | - | Module structure ready |
 | **Diris** | A10 | ✅ **Implemented** | ✅ | ✅ | Complete energy monitoring, THD analysis, dual communication |
-| **RedZ** | LKM144 | 🚧 **Planned** | - | - | Module structure ready |
+| **RedZ** | LKM144 | ✅ **Implemented** | ✅ | ✅ | Complete energy monitoring, dual communication |
 | **Schneider** | IEM3250 | 🚧 **Planned** | - | - | Module structure ready |
 | **Schneider** | IEM3155 | 🚧 **Planned** | - | - | Module structure ready |
 

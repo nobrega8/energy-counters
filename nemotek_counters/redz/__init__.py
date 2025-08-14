@@ -4,10 +4,21 @@ RedZ Counter Modules
 This module provides interfaces for RedZ energy meters and counters.
 
 Available counters:
-- LKM144: (To be implemented)
+- LKM144: Implemented with Modbus RTU/TCP support
 """
 
-# TODO: Implement LKM144 counter class and functions
-# from .lkm144 import LKM144DataCollector
+from .lkm144 import (
+    LKM144DataCollector,
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    ModbusErrorManager
+)
 
-__all__ = []
+__all__ = [
+    'LKM144DataCollector',
+    'CounterConfiguration',
+    'ModbusTCPConfiguration', 
+    'ModbusRTUConfiguration',
+    'ModbusErrorManager'
+]
