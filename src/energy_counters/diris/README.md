@@ -65,32 +65,44 @@ The A10 implementation reads three separate register blocks:
 #### Usage Example
 
 ```python
-from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
-from src.energy_counters.diris import A10DataCollector
+from energy_counters.diris import (
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    A10DataCollector
+)
 
-# Configure counter
+# Configure the counter
 counter_config = CounterConfiguration(
-    counter_id=789,
-    unit_id=1,
-    counter_name="Diris_A10_Main",
+    counter_id=152,
+    unit_id=97,  # Modbus address
+    counter_name="Carregador_Carro",
     company_id="MyCompany"
 )
 
-# Configure Modbus TCP
-modbus_config = ModbusTCPConfiguration(
-    host="192.162.10.10",
+# Configure Modbus TCP connection
+tcp_config = ModbusTCPConfiguration(
+    host="172.16.5.11",
     port=502,
-    timeout=3.0
+    timeout=4.0
 )
 
-# Create collector and get data
-collector = A10DataCollector(counter_config, modbus_tcp_config=modbus_config)
+# Create collector
+collector = A10DataCollector(counter_config, modbus_tcp_config=tcp_config)
+
+# Connect and read data
 if collector.connect():
     data = collector.collect_data()
-    print(f"Voltage L1: {data['vl1']}V")
-    print(f"Current L1: {data['il1']}A")
-    print(f"Active Power: {data['paeq']}W")
-    print(f"Frequency: {data['freq']}Hz")
+    if data:
+        print(f"Voltage L1: {data['vl1']}V")
+        print(f"Line-to-line voltage L12: {data['vl12']}V")
+        print(f"Current L1: {data['il1']}A")
+        print(f"Phase power L1: {data['pl1']}W")
+        print(f"Total active power: {data['paeq']}W")
+        print(f"Frequency: {data['freq']}Hz")
+        print(f"Power factor: {data['pfeq']}")
+        print(f"THD Voltage L1: {data['thdV1']}%")
+        print(f"THD Current L1: {data['thdIL1']}%")
+        print(f"Active Energy: {data['energyActive']}Wh")
     collector.disconnect()
 ```
 

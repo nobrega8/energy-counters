@@ -1,5 +1,5 @@
 """
-Setup script for nemotek-counters package
+Setup script for energy-counters package
 """
 
 from setuptools import setup, find_packages

@@ -1,4 +1,4 @@
-# Requirements for nemotek-counters library
+# Requirements for energy-counters library
 
 # Modbus communication
 pymodbus>=3.0.0
