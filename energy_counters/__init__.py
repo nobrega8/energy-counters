@@ -1,18 +1,18 @@
 """
-Nemotek Counters Library
+Energy Counters Library
 
 A Python library for reading data from various electrical energy counters
 including Carlo Gavazzi, Contrel, Diris, Lovato, RedZ, and Schneider devices.
 
 Usage:
-    import energyenergy_counters
-    from energyenergy_counters import carlo_gavazzi
-    from energyenergy_counters.carlo_gavazzi import em530
+    import energy_counters
+    from energ_counters import carlo_gavazzi
+    from energy_counters.carlo_gavazzi import em530
 """
 
 __version__ = "1.0.0"
-__author__ = "Nemotek GTC"
-__email__ = "info@nemotek.pt"
+__author__ = "nobrega8"
+__email__ = "afonsognobrega@gmail.com"
 
 # Import submodules to make them available
 from . import carlo_gavazzi
