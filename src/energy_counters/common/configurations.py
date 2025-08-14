@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Shared configuration classes for Nemotek Counters library.
+Shared configuration classes for Energy Counters library.
 
 This module contains the common configuration dataclasses that are used
 across all counter modules to avoid code duplication.

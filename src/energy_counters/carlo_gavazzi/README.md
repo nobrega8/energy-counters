@@ -58,33 +58,103 @@ The EM530 implementation reads four separate register blocks:
 | 0x0094-0x0095 | 2 | uint32be | 0.01 | Voltage THD L2 (%) |
 | 0x0096-0x0097 | 2 | uint32be | 0.01 | Voltage THD L3 (%) |
 
-#### Usage Example
+#### Usage Examples
+
+##### RTU (Serial) Connection
 
 ```python
-from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
-from energy_counters.carlo_gavazzi.em530 import EM530DataCollector
+from energy_counters.carlo_gavazzi import (
+    CounterConfiguration,
+    ModbusRTUConfiguration,
+    EM530DataCollector
+)
 
-# Configure counter
+# Configure the counter
 counter_config = CounterConfiguration(
     counter_id=167,
-    unit_id=100,
-    counter_name="EM530_Main",
+    unit_id=100,  # Modbus address
+    counter_name="TestCounter",
     company_id="MyCompany"
 )
 
-# Configure Modbus TCP
-modbus_config = ModbusTCPConfiguration(
-    host="192.162.10.10",
+# Configure Modbus RTU connection
+rtu_config = ModbusRTUConfiguration(
+    port="/dev/ttyNS0",  # Adjust according to your system
+    baudrate=9600
+)
+
+# Create collector
+collector = EM530DataCollector(counter_config, modbus_rtu_config=rtu_config)
+
+# Connect and read data
+if collector.connect():
+    data = collector.collect_data()
+    if data:
+        print(f"Voltage L1: {data['voltageL1']}V")
+        print(f"Current L1: {data['currentL1']}A")
+        print(f"Active Power: {data['activePower']}kW")
+    collector.disconnect()
+```
+
+##### TCP Connection
+
+```python
+from energy_counters.carlo_gavazzi import (
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    EM530DataCollector
+)
+
+# Configure the counter
+counter_config = CounterConfiguration(
+    counter_id=167,
+    unit_id=100,  # Modbus address
+    counter_name="TestCounter",
+    company_id="MyCompany"
+)
+
+# Configure Modbus TCP connection
+tcp_config = ModbusTCPConfiguration(
+    host="192.162.10.10",  # IP address of the counter
     port=502
 )
 
-# Create collector and get data
-collector = EM530DataCollector(counter_config, modbus_tcp_config=modbus_config)
+# Create collector
+collector = EM530DataCollector(counter_config, modbus_tcp_config=tcp_config)
+
+# Connect and read data
 if collector.connect():
     data = collector.collect_data()
-    print(f"Voltage L1: {data['voltageL1']}V")
-    print(f"Current L1: {data['currentL1']}A")
-    print(f"Active Power: {data['activePower']}kW")
+    if data:
+        print(f"Voltage L1: {data['voltageL1']}V")
+        print(f"Current L1: {data['currentL1']}A")
+        print(f"Active Power: {data['activePower']}kW")
+    collector.disconnect()
+```
+
+##### TCP with RTU Fallback
+
+```python
+from energy_counters.carlo_gavazzi import (
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    EM530DataCollector
+)
+
+counter_config = CounterConfiguration(167, 100, "TestCounter", "MyCompany")
+tcp_config = ModbusTCPConfiguration("192.162.10.10", 502)
+rtu_config = ModbusRTUConfiguration("/dev/ttyNS0", 9600)
+
+# Create collector with both configurations (tries TCP first, then RTU)
+collector = EM530DataCollector(counter_config,
+                               modbus_tcp_config=tcp_config,
+                               modbus_rtu_config=rtu_config)
+
+if collector.connect():
+    data = collector.collect_data()
+    if data:
+        print(f"Voltage L1: {data['voltageL1']}V")
     collector.disconnect()
 ```
 

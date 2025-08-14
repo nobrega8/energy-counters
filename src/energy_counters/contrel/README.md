@@ -61,32 +61,54 @@ The uD3h implementation reads three separate register blocks:
 #### Usage Example
 
 ```python
-from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
-from src.energy_counters.contrel.ud3h import UD3hDataCollector
+from energy_counters.contrel.ud3h import (
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    UD3hDataCollector
+)
 
-# Configure counter
+# Configure the counter
 counter_config = CounterConfiguration(
-    counter_id=125,
-    unit_id=87,
-    counter_name="Queimador Fieiras",
+    counter_id=175,
+    unit_id=1,  # Modbus address
+    counter_name="MainMeter",
     company_id="MyCompany"
 )
 
-# Configure Modbus TCP
-modbus_config = ModbusTCPConfiguration(
-    host="172.16.5.11",
+# Configure Modbus TCP connection (primary)
+tcp_config = ModbusTCPConfiguration(
+    host="192.162.10.10",
     port=502,
     timeout=4.0
 )
 
-# Create collector and get data
-collector = UD3hDataCollector(counter_config, modbus_tcp_config=modbus_config)
+# Configure Modbus RTU connection (fallback)
+rtu_config = ModbusRTUConfiguration(
+    port="/dev/ttyNS0",
+    baudrate=9600
+)
+
+# Create collector with both TCP and RTU support
+collector = UD3hDataCollector(
+    counter_config,
+    modbus_tcp_config=tcp_config,
+    modbus_rtu_config=rtu_config
+)
+
+# Connect and read data (tries TCP first, RTU as fallback)
 if collector.connect():
     data = collector.collect_data()
-    print(f"Voltage L1: {data['vl1']}V")
-    print(f"Current L1: {data['il1']}A")
-    print(f"Active Power: {data['paeq']}W")
-    print(f"Frequency: {data['freq']}Hz")
+    if data:
+        print(f"Counter: {data['counterName']}")
+        print(f"L-N Voltage L1: {data['vl1']}V")
+        print(f"L-L Voltage L12: {data['vl12']}V")
+        print(f"Current L1: {data['il1']}A")
+        print(f"Phase Power L1: {data['pl1']}W")
+        print(f"Total Active Power: {data['paeq']}W")
+        print(f"Frequency: {data['freq']}Hz")
+        print(f"Power Factor: {data['pfeq']}")
+        print(f"Active Energy: {data['energyActive']}Wh")
     collector.disconnect()
 ```
 

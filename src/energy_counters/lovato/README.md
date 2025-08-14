@@ -266,6 +266,51 @@ The DMG210 collector returns a dictionary with the following fields:
 - `thdIL1`, `thdIL2`, `thdIL3`: Current THD per phase (%)
 - `thdV1`, `thdV2`, `thdV3`: Voltage THD per phase (%)
 
+#### Usage Example
+
+```python
+from energy_counters.lovato import (
+    CounterConfiguration,
+    ModbusTCPConfiguration,
+    ModbusRTUConfiguration,
+    DMG210DataCollector
+)
+
+# Configure the counter  
+counter_config = CounterConfiguration(
+    counter_id=115,
+    unit_id=81,  # Modbus address
+    counter_name="General #115",
+    company_id="MyCompany"
+)
+
+# Configure Modbus TCP (primary)
+tcp_config = ModbusTCPConfiguration(
+    host="172.16.5.11",
+    port=502
+)
+
+# Configure Modbus RTU (fallback)
+rtu_config = ModbusRTUConfiguration(
+    port="/dev/ttyNS0",
+    baudrate=9600
+)
+
+# Create collector with both TCP and RTU support
+collector = DMG210DataCollector(counter_config, tcp_config, rtu_config)
+
+# Connect and read data (tries TCP first, RTU as fallback)
+if collector.connect():
+    data = collector.collect_data()
+    if data:
+        print(f"Voltage L1: {data['vl1']}V")
+        print(f"Current L1: {data['il1']}A")
+        print(f"Power P1: {data['p1']}kW")
+        print(f"Frequency: {data['freq']}Hz")
+        print(f"Active Energy: {data['activeEnergy']}kWh")
+    collector.disconnect()
+```
+
 ## Planned Counters
 
 ### DMG800 Energy Meter

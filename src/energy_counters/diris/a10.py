@@ -343,7 +343,7 @@ def main():
         counter_id=152,
         unit_id=97,
         counter_name="Carregador_Carro",
-        company_id="NEMOTEK"
+        company_id="MyCompany"
     )
     
     modbus_tcp_config = ModbusTCPConfiguration(
