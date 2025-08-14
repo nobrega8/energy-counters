@@ -62,7 +62,7 @@ The uD3h implementation reads three separate register blocks:
 
 ```python
 from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
-from energy_counters.contrel.ud3h import UD3hDataCollector
+from src.energy_counters.contrel.ud3h import UD3hDataCollector
 
 # Configure counter
 counter_config = CounterConfiguration(

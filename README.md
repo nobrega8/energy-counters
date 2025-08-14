@@ -43,7 +43,7 @@ pip install -e .
 
 ```python
 import energy_counters
-from energy_counters import carlo_gavazzi
+from src.energy_counters import carlo_gavazzi
 from energy_counters.carlo_gavazzi import em530
 ```
 
@@ -52,7 +52,7 @@ from energy_counters.carlo_gavazzi import em530
 #### RTU (Serial) Connection
 
 ```python
-from energy_counters.carlo_gavazzi.em530 import (
+from src.energy_counters.carlo_gavazzi import (
     CounterConfiguration,
     ModbusRTUConfiguration,
     EM530DataCollector
@@ -88,7 +88,7 @@ if collector.connect():
 #### TCP Connection
 
 ```python
-from energy_counters.carlo_gavazzi.em530 import (
+from src.energy_counters.carlo_gavazzi import (
     CounterConfiguration,
     ModbusTCPConfiguration,
     EM530DataCollector
@@ -124,7 +124,7 @@ if collector.connect():
 #### TCP with RTU Fallback
 
 ```python
-from energy_counters.carlo_gavazzi.em530 import (
+from src.energy_counters.carlo_gavazzi import (
     CounterConfiguration,
     ModbusTCPConfiguration,
     ModbusRTUConfiguration,
@@ -150,7 +150,7 @@ if collector.connect():
 ### Lovato DMG210 Example
 
 ```python
-from energy_counters.lovato.dmg210 import (
+from src.energy_counters.lovato import (
     CounterConfiguration,
     ModbusTCPConfiguration,
     ModbusRTUConfiguration,
@@ -195,7 +195,7 @@ if collector.connect():
 ### Diris A10 Example
 
 ```python
-from energy_counters.diris.a10 import (
+from src.energy_counters.diris import (
     CounterConfiguration,
     ModbusTCPConfiguration,
     A10DataCollector
@@ -239,7 +239,7 @@ if collector.connect():
 ### RedZ LKM144 Example
 
 ```python
-from energy_counters.redz.lkm144 import (
+from src.energy_counters.redz import (
     CounterConfiguration,
     ModbusRTUConfiguration,
     ModbusTCPConfiguration,
@@ -290,8 +290,9 @@ if collector.connect():
 ```
 
 ### Contrel uD3h Example
+
 ```python
-from energy_counters.contrel.ud3h import (
+from src.energy_counters.contrel.ud3h import (
     CounterConfiguration,
     ModbusTCPConfiguration,
     ModbusRTUConfiguration,
