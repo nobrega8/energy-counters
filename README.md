@@ -5,8 +5,8 @@
 
 ![Carlo Gavazzi](https://img.shields.io/badge/support-Carlo%20Gavazzi-red.svg?logo=powerbi&logoColor=white)
 ![Lovato](https://img.shields.io/badge/support-Lovato-orange.svg?logo=lightning&logoColor=white)
-![Diris](https://img.shields.io/badge/support-Diris-lightgrey.svg?logo=eclipsemosquitto&logoColor=black)
-![RedZ](https://img.shields.io/badge/support-RedZ-yellow.svg?logo=zigbee&logoColor=black)
+![Diris](https://img.shields.io/badge/support-Diris-lightgrey.svg?logo=eclipsemosquitto&logoColor=white)
+![RedZ](https://img.shields.io/badge/support-RedZ-yellow.svg?logo=zigbee&logoColor=white)
 ![Contrel](https://img.shields.io/badge/support-Contrel-darkgreen.svg?logo=modbus&logoColor=white)
 ![Schneider](https://img.shields.io/badge/support-Schneider-darkgreen.svg?logo=schneider%20electric&logoColor=white)
 
