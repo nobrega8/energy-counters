@@ -323,12 +323,15 @@ collector = UD3hDataCollector(
 if collector.connect():
     data = collector.collect_data()
     if data:
-        print(f"Voltage L1: {data['voltageL1']}V")
-        print(f"Current L1: {data['currentL1']}A")
-        print(f"Active Power: {data['activePower']}kW")
-        print(f"Frequency: {data['frequency']}Hz")
-        print(f"Power Factor: {data['powerFactor']}")
-        print(f"Active Energy: {data['activeEnergy']}kWh")
+        print(f"Counter: {data['counterName']}")
+        print(f"L-N Voltage L1: {data['vl1']}V")
+        print(f"L-L Voltage L12: {data['vl12']}V")
+        print(f"Current L1: {data['il1']}A")
+        print(f"Phase Power L1: {data['pl1']}W")
+        print(f"Total Active Power: {data['paeq']}W")
+        print(f"Frequency: {data['freq']}Hz")
+        print(f"Power Factor: {data['pfeq']}")
+        print(f"Active Energy: {data['energyActive']}Wh")
     collector.disconnect()
 ```
 
