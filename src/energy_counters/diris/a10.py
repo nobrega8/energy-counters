@@ -284,41 +284,41 @@ class A10DataCollector:
         thdIL3 = data03[5]  # offset 10
 
         return {
-            "companyID": self.counter_config.company_id,
-            "ts": timestamp,
-            "counterID": str(self.counter_config.counter_id),
+            "companyId": self.counter_config.company_id,
+            "timestamp": timestamp,
+            "counterId": str(self.counter_config.counter_id),
             "counterName": self.counter_config.counter_name,
 
             # Line-to-line voltages (V) - uint32be scale 0.01
-            "vl12": f"{(vl12 * 0.01):.2f}",
-            "vl23": f"{(vl23 * 0.01):.2f}",
-            "vl31": f"{(vl31 * 0.01):.2f}",
+            "voltageL12": f"{(vl12 * 0.01):.2f}",
+            "voltageL23": f"{(vl23 * 0.01):.2f}",
+            "voltageL31": f"{(vl31 * 0.01):.2f}",
             
             # Line-to-neutral voltages (V) - uint32be scale 0.01
-            "vl1": f"{(vl1 * 0.01):.2f}",
-            "vl2": f"{(vl2 * 0.01):.2f}",
-            "vl3": f"{(vl3 * 0.01):.2f}",
+            "voltageL1": f"{(vl1 * 0.01):.2f}",
+            "voltageL2": f"{(vl2 * 0.01):.2f}",
+            "voltageL3": f"{(vl3 * 0.01):.2f}",
 
             # Currents (A) - uint32be scale 0.001
-            "il1": f"{(il1 * 0.001):.2f}",
-            "il2": f"{(il2 * 0.001):.2f}",
-            "il3": f"{(il3 * 0.001):.2f}",
+            "currentL1": f"{(il1 * 0.001):.2f}",
+            "currentL2": f"{(il2 * 0.001):.2f}",
+            "currentL3": f"{(il3 * 0.001):.2f}",
 
             # Phase powers (W) - int32be scale 0.01
-            "pl1": f"{(pl1 * 0.01):.2f}",
-            "pl2": f"{(pl2 * 0.01):.2f}",
-            "pl3": f"{(pl3 * 0.01):.2f}",
+            "powerL1": f"{(pl1 * 0.01):.2f}",
+            "powerL2": f"{(pl2 * 0.01):.2f}",
+            "powerL3": f"{(pl3 * 0.01):.2f}",
 
             # Frequency (Hz) - uint32be scale 0.01
-            "freq": f"{(freq * 0.01):.2f}",
+            "frequency": f"{(freq * 0.01):.2f}",
             
             # Equivalent powers - int32be scale 0.01 for active/reactive, uint32be scale 0.01 for apparent
-            "paeq": f"{(paeq * 0.01):.2f}",
-            "qaeq": f"{(qaeq * 0.01):.2f}",
-            "saeq": f"{(saeq * 0.01):.2f}",
+            "activePower": f"{(paeq * 0.01):.2f}",
+            "reactivePower": f"{(qaeq * 0.01):.2f}",
+            "apparentPower": f"{(saeq * 0.01):.2f}",
             
             # Power factor - int32be scale 0.001
-            "pfeq": f"{(pfeq * 0.001):.3f}",
+            "powerFactor": f"{(pfeq * 0.001):.3f}",
 
             # Energies - uint32be scale 1
             "energyActive": str(energyActive),
@@ -326,13 +326,13 @@ class A10DataCollector:
             "energyApparent": str(energyApparent),
 
             # THD values (%) - uint16be scale 0.1
-            "thdV1": f"{(thdV1 * 0.1):.2f}",
-            "thdV2": f"{(thdV2 * 0.1):.2f}",
-            "thdV3": f"{(thdV3 * 0.1):.2f}",
+            "thdVoltageL1": f"{(thdV1 * 0.1):.2f}",
+            "thdVoltageL2": f"{(thdV2 * 0.1):.2f}",
+            "thdVoltageL3": f"{(thdV3 * 0.1):.2f}",
 
-            "thdIL1": f"{(thdIL1 * 0.1):.2f}",
-            "thdIL2": f"{(thdIL2 * 0.1):.2f}",
-            "thdIL3": f"{(thdIL3 * 0.1):.2f}"
+            "thdCurrentL1": f"{(thdIL1 * 0.1):.2f}",
+            "thdCurrentL2": f"{(thdIL2 * 0.1):.2f}",
+            "thdCurrentL3": f"{(thdIL3 * 0.1):.2f}"
         }
 
 

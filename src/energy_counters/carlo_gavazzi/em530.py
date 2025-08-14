@@ -303,9 +303,9 @@ class EM530DataCollector:
             "frequency": round(data01[51] * 0.1, 1),
 
             # Energies (kWh/kVArh)
-            "activeEnergy": round(combine_registers(data01[53], data01[52]) * 0.1, 1),
-            "reactiveEnergy": round(combine_registers(data01[55], data01[54]) * 0.1, 1),
-            "apparentEnergy": round(combine_registers(data02[1], data02[0]) * 0.1, 1),
+            "energyActive": round(combine_registers(data01[53], data01[52]) * 0.1, 1),
+            "energyReactive": round(combine_registers(data01[55], data01[54]) * 0.1, 1),
+            "energyApparent": round(combine_registers(data02[1], data02[0]) * 0.1, 1),
 
             # Current THD (%)
             "thdCurrentL1": round(combine_registers(data03[1], data03[0]) * 0.01, 2),

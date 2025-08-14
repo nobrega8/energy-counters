@@ -253,28 +253,28 @@ class DMG210DataCollector:
 
             # Instantaneous data (data01) - based on second buffer parser
             # L-N Voltages (V) - uint32be scale 0.01
-            "vl1": round(uint32_from_registers(data01[0], data01[1]) * 0.01, 2),
-            "vl2": round(uint32_from_registers(data01[2], data01[3]) * 0.01, 2),
-            "vl3": round(uint32_from_registers(data01[4], data01[5]) * 0.01, 2),
+            "voltageL1": round(uint32_from_registers(data01[0], data01[1]) * 0.01, 2),
+            "voltageL2": round(uint32_from_registers(data01[2], data01[3]) * 0.01, 2),
+            "voltageL3": round(uint32_from_registers(data01[4], data01[5]) * 0.01, 2),
 
             # Currents (A) - uint32be scale 0.0001
-            "il1": round(uint32_from_registers(data01[6], data01[7]) * 0.0001, 4),
-            "il2": round(uint32_from_registers(data01[8], data01[9]) * 0.0001, 4),
-            "il3": round(uint32_from_registers(data01[10], data01[11]) * 0.0001, 4),
+            "currentL1": round(uint32_from_registers(data01[6], data01[7]) * 0.0001, 4),
+            "currentL2": round(uint32_from_registers(data01[8], data01[9]) * 0.0001, 4),
+            "currentL3": round(uint32_from_registers(data01[10], data01[11]) * 0.0001, 4),
 
             # L-L Voltages (V) - uint32be scale 0.01
-            "vl12": round(uint32_from_registers(data01[12], data01[13]) * 0.01, 2),
-            "vl23": round(uint32_from_registers(data01[14], data01[15]) * 0.01, 2),
-            "vl31": round(uint32_from_registers(data01[16], data01[17]) * 0.01, 2),
+            "voltageL12": round(uint32_from_registers(data01[12], data01[13]) * 0.01, 2),
+            "voltageL23": round(uint32_from_registers(data01[14], data01[15]) * 0.01, 2),
+            "voltageL31": round(uint32_from_registers(data01[16], data01[17]) * 0.01, 2),
 
             # Phase Powers (kW) - int32be scale 0.01
-            "pl1": round(int32_from_registers(data01[18], data01[19]) * 0.01, 2),
-            "pl2": round(int32_from_registers(data01[20], data01[21]) * 0.01, 2),
-            "pl3": round(int32_from_registers(data01[22], data01[23]) * 0.01, 2),
+            "powerL1": round(int32_from_registers(data01[18], data01[19]) * 0.01, 2),
+            "powerL2": round(int32_from_registers(data01[20], data01[21]) * 0.01, 2),
+            "powerL3": round(int32_from_registers(data01[22], data01[23]) * 0.01, 2),
 
             # Frequency and equivalent data (data02) - based on instant parser
             # Frequency (Hz) - uint32be scale 0.01
-            "freq": round(uint32_from_registers(data02[0], data02[1]) * 0.01, 2),
+            "frequency": round(uint32_from_registers(data02[0], data02[1]) * 0.01, 2),
 
             # Equivalent values
             "veq": round(uint32_from_registers(data02[2], data02[3]) * 0.01, 2),
@@ -282,10 +282,10 @@ class DMG210DataCollector:
             "ieq": round(uint32_from_registers(data02[6], data02[7]) * 0.0001, 4),
 
             # Equivalent Powers (kW/kVAr/kVA) - int32be/uint32be scale 0.01
-            "paeq": round(int32_from_registers(data02[8], data02[9]) * 0.01, 2),
-            "qaeq": round(int32_from_registers(data02[10], data02[11]) * 0.01, 2),
-            "saeq": round(uint32_from_registers(data02[12], data02[13]) * 0.01, 2),
-            "pfeq": round(uint32_from_registers(data02[14], data02[15]) * 0.0001, 4),
+            "activePower": round(int32_from_registers(data02[8], data02[9]) * 0.01, 2),
+            "reactivePower": round(int32_from_registers(data02[10], data02[11]) * 0.01, 2),
+            "apparentPower": round(uint32_from_registers(data02[12], data02[13]) * 0.01, 2),
+            "powerFactor": round(uint32_from_registers(data02[14], data02[15]) * 0.0001, 4),
 
             # Additional fields from Node-RED parser
             "assN": round(uint32_from_registers(data02[16], data02[17]) * 0.01, 2),
@@ -293,14 +293,14 @@ class DMG210DataCollector:
             "iln": round(uint32_from_registers(data02[20], data02[21]) * 0.01, 2),
 
             # Voltage THD (%) - uint32be scale 0.01
-            "thdV1": round(uint32_from_registers(data02[26], data02[27]) * 0.01, 2),
-            "thdV2": round(uint32_from_registers(data02[28], data02[29]) * 0.01, 2),
-            "thdV3": round(uint32_from_registers(data02[30], data02[31]) * 0.01, 2),
+            "thdVoltageL1": round(uint32_from_registers(data02[26], data02[27]) * 0.01, 2),
+            "thdVoltageL2": round(uint32_from_registers(data02[28], data02[29]) * 0.01, 2),
+            "thdVoltageL3": round(uint32_from_registers(data02[30], data02[31]) * 0.01, 2),
 
             # Current THD (%) - uint32be scale 0.01
-            "thdIL1": round(uint32_from_registers(data02[32], data02[33]) * 0.01, 2),
-            "thdIL2": round(uint32_from_registers(data02[34], data02[35]) * 0.01, 2),
-            "thdIL3": round(uint32_from_registers(data02[36], data02[37]) * 0.01, 2),
+            "thdCurrentL1": round(uint32_from_registers(data02[32], data02[33]) * 0.01, 2),
+            "thdCurrentL2": round(uint32_from_registers(data02[34], data02[35]) * 0.01, 2),
+            "thdCurrentL3": round(uint32_from_registers(data02[36], data02[37]) * 0.01, 2),
 
             # Energies (data03) - based on energy parser int32be scale 0.01
             "energyActive": round(int32_from_registers(data03[0], data03[1]) * 0.01, 1),
