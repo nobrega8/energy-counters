@@ -217,7 +217,7 @@ class UD3hDataCollector:
         """Read holding registers from the device"""
         try:
             result = self.client.read_holding_registers(
-                address, count, device_id=self.counter_config.unit_id
+                address, count=count, device_id=self.counter_config.unit_id
             )
             
             if result.isError():
