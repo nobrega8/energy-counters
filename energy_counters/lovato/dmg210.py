@@ -172,7 +172,7 @@ class DMG210DataCollector:
             result = self.client.read_holding_registers(
                 address=address,
                 count=count,
-                slave=self.counter_config.unit_id
+                device_id=self.counter_config.unit_id
             )
 
             if result.isError():
