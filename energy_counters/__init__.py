@@ -10,7 +10,7 @@ Usage:
     from energy_counters.carlo_gavazzi import em530
 """
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 __author__ = "nobrega8"
 __email__ = "afonsognobrega@gmail.com"
 
