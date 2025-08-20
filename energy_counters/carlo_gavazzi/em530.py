@@ -12,6 +12,7 @@ from typing import Optional, Dict, Any
 import serial
 from pymodbus.client.serial import ModbusSerialClient
 from pymodbus.client.tcp import ModbusTcpClient
+from pymodbus.framer import FramerType
 from pymodbus.exceptions import ModbusException, ConnectionException
 
 # Import shared configuration classes
@@ -161,8 +162,8 @@ class EM530DataCollector:
         """Establish Modbus RTU connection"""
         try:
             self.client = ModbusSerialClient(
-                method='rtu',
                 port=self.modbus_rtu_config.port,
+                framer=FramerType.RTU,
                 baudrate=self.modbus_rtu_config.baudrate,
                 bytesize=self.modbus_rtu_config.data_bits,
                 parity=self.modbus_rtu_config.parity,
