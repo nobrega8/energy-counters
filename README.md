@@ -105,8 +105,8 @@ For detailed usage examples and complete documentation for each counter, see the
 | **Contrel** | uD3h | **Implemented** | Yes | Yes | Complete energy monitoring, dual communication |
 | **Diris** | A10 | **Implemented** | Yes | Yes | Complete energy monitoring, THD analysis, dual communication |
 | **RedZ** | LKM144 | **Implemented** | Yes | Yes | Complete energy monitoring, dual communication |
-| **Schneider** | IEM3250 | **Planned** | - | - | Module structure ready |
-| **Schneider** | IEM3155 | **Planned** | - | - | Module structure ready |
+| **Schneider** | IEM3250 | **Planned** | Yes | Yes | Module structure ready |
+| **Schneider** | IEM3155 | **Planned** | Yes | Yes | Module structure ready |
 
 ### Implementation Status Legend
 - **Implemented**: Full functionality with comprehensive data collection
