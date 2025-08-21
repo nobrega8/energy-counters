@@ -79,6 +79,7 @@ def main():
     print("  from energy_counters.diris import a10")
     print("  from energy_counters.lovato import dmg210, dmg6")
     print("  from energy_counters.redz import lkm144")
+    print("  from energy_counters.schneider import iem3255")
 
 
 if __name__ == "__main__":
