@@ -6,6 +6,7 @@ This module provides interfaces for Lovato energy meters and counters.
 Available counters:
 - DMG6: Complete implementation with TCP and RTU support (previously named DMG210)
 - DMG210: Complete implementation with TCP and RTU support (based on Node-RED flow)
+- DMG1: Basic implementation with TCP and RTU support (needs complete Node-RED flow)
 - DMG800: (To be implemented)
 """
 
@@ -16,6 +17,10 @@ from .dmg6 import (
 from .dmg210 import (
     ModbusErrorManager,
     DMG210DataCollector
+)
+from .dmg1 import (
+    ModbusErrorManager as DMG1ModbusErrorManager,
+    DMG1DataCollector
 )
 
 # Import shared configuration classes
@@ -31,5 +36,7 @@ __all__ = [
     'ModbusErrorManager',
     'DMG6ModbusErrorManager',
     'DMG6DataCollector',
-    'DMG210DataCollector'
+    'DMG210DataCollector',
+    'DMG1ModbusErrorManager',
+    'DMG1DataCollector'
 ]

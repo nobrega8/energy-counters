@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
-Data collection from Schneider IEM3155 energy meter via Modbus TCP/RTU
-Based on the same structure as IEM3255 since they are similar models
+Data collection from Lovato DMG1 counter via Modbus RTU/TCP
+Based on Node-RED flow pattern and existing Lovato implementations
 """
 
 import time
 import json
 import logging
-import struct
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 import serial
 from pymodbus.client.serial import ModbusSerialClient
 from pymodbus.client.tcp import ModbusTcpClient
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModbusErrorManager:
-    """Modbus error manager based on Node-RED subflow with threshold of 6"""
+    """Modbus error manager based on Node-RED subflow"""
 
     def __init__(self, counter_name: str, company_id: str):
         self.counter_name = counter_name
@@ -40,7 +39,7 @@ class ModbusErrorManager:
         Process error following Node-RED logic:
         - Increment counter if there's an error
         - Reset if there's no error
-        - Consider error only if count > 6 (specific to IEM3155)
+        - Consider error only if count > 6 (based on Node-RED flow)
         """
         if has_error:
             self.error_count += 1
@@ -79,18 +78,18 @@ class ModbusErrorManager:
         self._host_ip = host_ip
 
 
-class IEM3155DataCollector:
-    """Schneider IEM3155 data collection"""
+class DMG1DataCollector:
+    """Lovato DMG1 data collection"""
 
     def __init__(self, counter_config: CounterConfiguration, 
-                 connection_config, use_tcp: bool = True):
+                 connection_config, use_tcp: bool = False):
         """
-        Initialize IEM3155 data collector
+        Initialize DMG1 data collector
         
         Args:
             counter_config: Counter configuration
             connection_config: TCP or RTU configuration
-            use_tcp: True for TCP, False for RTU
+            use_tcp: True for TCP, False for RTU (DMG1 typically uses RTU)
         """
         self.counter_config = counter_config
         self.connection_config = connection_config
@@ -101,7 +100,7 @@ class IEM3155DataCollector:
             counter_config.company_id
         )
         
-        # Set host IP for error reporting
+        # Set host IP for error reporting if using TCP
         if hasattr(connection_config, 'host'):
             self.error_manager.set_host_ip(connection_config.host)
 
@@ -126,23 +125,23 @@ class IEM3155DataCollector:
 
             connection = self.client.connect()
             if connection:
-                logger.info(f"Connected to IEM3155 meter {self.counter_config.counter_name}")
+                logger.info(f"Connected to DMG1 meter {self.counter_config.counter_name}")
                 return True
             else:
-                logger.error(f"Failed to connect to IEM3155 meter {self.counter_config.counter_name}")
+                logger.error(f"Failed to connect to DMG1 meter {self.counter_config.counter_name}")
                 return False
 
         except Exception as e:
-            logger.error(f"Error connecting to IEM3155 meter: {e}")
+            logger.error(f"Error connecting to DMG1 meter: {e}")
             return False
 
     def disconnect(self):
         """Disconnect from the meter"""
         if self.client:
             self.client.close()
-            logger.info(f"Disconnected from IEM3155 meter {self.counter_config.counter_name}")
+            logger.info(f"Disconnected from DMG1 meter {self.counter_config.counter_name}")
 
-    def _read_registers(self, address: int, count: int) -> Optional[List[int]]:
+    def _read_registers(self, address: int, count: int) -> Optional[list]:
         """Read modbus registers with error handling"""
         try:
             result = self.client.read_holding_registers(
@@ -161,37 +160,25 @@ class IEM3155DataCollector:
             logger.error(f"Exception reading registers {address}-{address+count-1}: {e}")
             return None
 
-    def _parse_float_be(self, registers: List[int], start_index: int) -> float:
-        """Parse big-endian float from registers"""
-        if start_index + 1 >= len(registers):
-            return 0.0
-            
-        # Combine two 16-bit registers into one 32-bit value (big-endian)
-        combined = (registers[start_index] << 16) | registers[start_index + 1]
-        
-        # Convert to bytes and then to float
-        bytes_val = struct.pack('>I', combined)  # '>I' = big-endian unsigned int
-        float_val = struct.unpack('>f', bytes_val)[0]  # '>f' = big-endian float
-        
-        return float_val
-
     def collect_data(self) -> Optional[Dict[str, Any]]:
-        """Collect data from IEM3155 meter"""
+        """Collect data from DMG1 meter"""
         if not self.client:
             logger.error("Client not connected")
             return None
 
         try:
-            # Read data blocks as per IEM3155 register map
-            # Using same register map as IEM3255 since they're similar models
-            current_data = self._read_registers(2998, 8)     # Current measurements
-            voltage_data = self._read_registers(3018, 16)    # Voltage measurements  
-            power_data = self._read_registers(3052, 12)      # Power measurements
-            freq_data = self._read_registers(3108, 4)        # Frequency
-            energy_data = self._read_registers(45098, 4)     # Energy
+            # TODO: Define DMG1 specific register map
+            # This is a placeholder implementation - needs actual register map
+            # from complete Node-RED flow
+            
+            # Example register reads (to be updated with actual DMG1 registers)
+            voltage_data = self._read_registers(0, 6)        # Placeholder addresses
+            current_data = self._read_registers(10, 6)       # Placeholder addresses
+            power_data = self._read_registers(20, 8)         # Placeholder addresses
+            energy_data = self._read_registers(30, 4)        # Placeholder addresses
 
             # Check if any read failed
-            if any(data is None for data in [current_data, voltage_data, power_data, freq_data, energy_data]):
+            if any(data is None for data in [voltage_data, current_data, power_data, energy_data]):
                 error_msg = self.error_manager.process_error(True)
                 if error_msg:
                     logger.warning(f"Modbus communication error: {error_msg}")
@@ -203,95 +190,65 @@ class IEM3155DataCollector:
                 logger.info(f"Communication restored: {error_msg}")
 
             # Parse and format data
-            return self._format_data(current_data, voltage_data, power_data, freq_data, energy_data)
+            return self._format_data(voltage_data, current_data, power_data, energy_data)
 
         except Exception as e:
-            logger.error(f"Error collecting data from IEM3155: {e}")
+            logger.error(f"Error collecting data from DMG1: {e}")
             error_msg = self.error_manager.process_error(True)
             if error_msg:
                 logger.warning(f"Exception in data collection: {error_msg}")
             return None
 
-    def _format_data(self, current_data: List[int], voltage_data: List[int], 
-                     power_data: List[int], freq_data: List[int], 
-                     energy_data: List[int]) -> Dict[str, Any]:
+    def _format_data(self, voltage_data: list, current_data: list, 
+                     power_data: list, energy_data: list) -> Dict[str, Any]:
         """Format collected data according to Node-RED format"""
         
         timestamp = datetime.now().isoformat()
         
-        # Parse currents from current_data (floatbe at offsets 2, 6, 10)
-        il1 = self._parse_float_be(current_data, 1)  # offset 2 in bytes = index 1 in registers
-        il2 = self._parse_float_be(current_data, 3)  # offset 6 in bytes = index 3 in registers
-        il3 = self._parse_float_be(current_data, 5)  # offset 10 in bytes = index 5 in registers
+        # TODO: Parse actual register values according to DMG1 specifications
+        # This is a placeholder implementation
         
-        # Parse voltages from voltage_data (floatbe at offsets 2, 6, 10, 18, 22, 26)
-        vl12 = self._parse_float_be(voltage_data, 1)   # offset 2 in bytes = index 1
-        vl23 = self._parse_float_be(voltage_data, 3)   # offset 6 in bytes = index 3
-        vl31 = self._parse_float_be(voltage_data, 5)   # offset 10 in bytes = index 5
-        vl1 = self._parse_float_be(voltage_data, 9)    # offset 18 in bytes = index 9
-        vl2 = self._parse_float_be(voltage_data, 11)   # offset 22 in bytes = index 11
-        vl3 = self._parse_float_be(voltage_data, 13)   # offset 26 in bytes = index 13
+        # Placeholder values - to be updated with actual parsing
+        vl1 = voltage_data[0] if voltage_data else 0
+        vl2 = voltage_data[1] if voltage_data else 0
+        vl3 = voltage_data[2] if voltage_data else 0
         
-        # Parse powers from power_data (floatbe at offsets 2, 6, 10, 14)
-        p1 = self._parse_float_be(power_data, 1)    # offset 2 in bytes = index 1
-        p2 = self._parse_float_be(power_data, 3)    # offset 6 in bytes = index 3
-        p3 = self._parse_float_be(power_data, 5)    # offset 10 in bytes = index 5
-        peq = self._parse_float_be(power_data, 7)   # offset 14 in bytes = index 7
+        il1 = current_data[0] if current_data else 0
+        il2 = current_data[1] if current_data else 0
+        il3 = current_data[2] if current_data else 0
         
-        # Parse frequency from freq_data (floatbe at offset 2)
-        freq = self._parse_float_be(freq_data, 1)   # offset 2 in bytes = index 1
+        p1 = power_data[0] if power_data else 0
+        p2 = power_data[1] if power_data else 0
+        p3 = power_data[2] if power_data else 0
         
-        # Parse energy from energy_data (floatbe at offset 2)
-        energy_active = self._parse_float_be(energy_data, 1)  # offset 2 in bytes = index 1
+        energy_active = energy_data[0] if energy_data else 0
 
-        # Format according to Node-RED function (same format as IEM3255)
+        # Format according to standard format (to be adjusted based on actual DMG1 output)
         formatted_data = {
             "companyID": self.counter_config.company_id,
             "ts": timestamp,
             "counterID": str(self.counter_config.counter_id),
             "counterName": self.counter_config.counter_name,
             
-            # Line-to-line voltages (from Modbus)
-            "vl12": f"{vl12:.2f}",
-            "vl23": f"{vl23:.2f}",
-            "vl31": f"{vl31:.2f}",
+            # Voltage measurements
+            "vl1": f"{vl1:.2f}",
+            "vl2": f"{vl2:.2f}",
+            "vl3": f"{vl3:.2f}",
             
-            # Line-to-neutral voltages (hardcoded per Node-RED)
-            "vl1": "0.0",
-            "vl2": "0.0", 
-            "vl3": "0.0",
-            
-            # Line currents (from Modbus)
+            # Current measurements
             "il1": f"{il1:.2f}",
             "il2": f"{il2:.2f}",
             "il3": f"{il3:.2f}",
             
-            # Line powers (hardcoded per Node-RED)
-            "pl1": "0.0",
-            "pl2": "0.0",
-            "pl3": "0.0",
+            # Power measurements
+            "pl1": f"{p1:.2f}",
+            "pl2": f"{p2:.2f}",
+            "pl3": f"{p3:.2f}",
             
-            # Equivalent powers (hardcoded per Node-RED)
-            "paeq": "0.0",
-            "qaeq": "0.0", 
-            "saeq": "0.0",
-            "pfeq": "0.0",
-            
-            # Frequency (from Modbus)
-            "freq": f"{freq:.2f}",
-            
-            # Energy values
+            # Energy measurement
             "energyActive": f"{energy_active:.1f}",
-            "energyReactive": "0.0",
-            "energyApparent": "0.0",
             
-            # THD values (hardcoded per Node-RED)
-            "thdV1": "0.0",
-            "thdV2": "0.0", 
-            "thdV3": "0.0",
-            "thdIL1": "0.0",
-            "thdIL2": "0.0",
-            "thdIL3": "0.0"
+            # TODO: Add other fields based on DMG1 specifications
         }
         
         return formatted_data
@@ -301,22 +258,26 @@ def main():
     """Main function for testing"""
     # Example configuration for testing
     counter_config = CounterConfiguration(
-        counter_id=137,
-        unit_id=20,
-        counter_name="L21 - Secadores Linhas 21 e 22",
+        counter_id=999,  # Placeholder ID for DMG1
+        unit_id=1,
+        counter_name="DMG1 Test Counter",
         company_id="TestCompany"
     )
     
-    tcp_config = ModbusTCPConfiguration(
-        host="172.16.5.9",
-        port=502,
+    # DMG1 typically uses RTU
+    rtu_config = ModbusRTUConfiguration(
+        port="/dev/ttyUSB0",
+        baudrate=9600,
+        bytesize=8,
+        parity='N',
+        stopbits=1,
         timeout=3.0
     )
     
-    collector = IEM3155DataCollector(counter_config, tcp_config, use_tcp=True)
+    collector = DMG1DataCollector(counter_config, rtu_config, use_tcp=False)
     
     try:
-        logger.info("Starting IEM3155 data collection...")
+        logger.info("Starting DMG1 data collection...")
         
         if not collector.connect():
             logger.error("Failed to connect to meter")

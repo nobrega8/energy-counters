@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Data collection from Schneider IEM3155 energy meter via Modbus TCP/RTU
-Based on the same structure as IEM3255 since they are similar models
+Data collection from Schneider IEM3255 energy meter via Modbus TCP/RTU
+Based on Node-RED flow provided in issue #21
 """
 
 import time
@@ -40,7 +40,7 @@ class ModbusErrorManager:
         Process error following Node-RED logic:
         - Increment counter if there's an error
         - Reset if there's no error
-        - Consider error only if count > 6 (specific to IEM3155)
+        - Consider error only if count > 6 (specific to IEM3255)
         """
         if has_error:
             self.error_count += 1
@@ -79,13 +79,13 @@ class ModbusErrorManager:
         self._host_ip = host_ip
 
 
-class IEM3155DataCollector:
-    """Schneider IEM3155 data collection"""
+class IEM3255DataCollector:
+    """Schneider IEM3255 data collection"""
 
     def __init__(self, counter_config: CounterConfiguration, 
                  connection_config, use_tcp: bool = True):
         """
-        Initialize IEM3155 data collector
+        Initialize IEM3255 data collector
         
         Args:
             counter_config: Counter configuration
@@ -101,12 +101,11 @@ class IEM3155DataCollector:
             counter_config.company_id
         )
         
-        # Set host IP for error reporting
-        if hasattr(connection_config, 'host'):
+        if use_tcp:
             self.error_manager.set_host_ip(connection_config.host)
 
     def connect(self) -> bool:
-        """Connect to the meter"""
+        """Establish connection with IEM3255 meter"""
         try:
             if self.use_tcp:
                 self.client = ModbusTcpClient(
@@ -116,112 +115,134 @@ class IEM3155DataCollector:
                 )
             else:
                 self.client = ModbusSerialClient(
+                    method='rtu',
                     port=self.connection_config.port,
                     baudrate=self.connection_config.baudrate,
-                    bytesize=self.connection_config.bytesize,
+                    timeout=self.connection_config.timeout,
                     parity=self.connection_config.parity,
-                    stopbits=self.connection_config.stopbits,
-                    timeout=self.connection_config.timeout
+                    stopbits=self.connection_config.stop_bits,
+                    bytesize=self.connection_config.data_bits
                 )
-
-            connection = self.client.connect()
-            if connection:
-                logger.info(f"Connected to IEM3155 meter {self.counter_config.counter_name}")
+            
+            connection_result = self.client.connect()
+            if connection_result:
+                logger.info(f"Connected to IEM3255 {self.counter_config.counter_name}")
                 return True
             else:
-                logger.error(f"Failed to connect to IEM3155 meter {self.counter_config.counter_name}")
+                logger.error(f"Failed to connect to IEM3255 {self.counter_config.counter_name}")
                 return False
-
+                
         except Exception as e:
-            logger.error(f"Error connecting to IEM3155 meter: {e}")
+            logger.error(f"Connection error: {e}")
             return False
 
     def disconnect(self):
-        """Disconnect from the meter"""
+        """Close connection"""
         if self.client:
             self.client.close()
-            logger.info(f"Disconnected from IEM3155 meter {self.counter_config.counter_name}")
+            logger.info(f"Disconnected from IEM3255 {self.counter_config.counter_name}")
 
     def _read_registers(self, address: int, count: int) -> Optional[List[int]]:
-        """Read modbus registers with error handling"""
+        """Read holding registers from meter"""
         try:
+            if not self.client or not self.client.is_socket_open():
+                if not self.connect():
+                    return None
+            
             result = self.client.read_holding_registers(
                 address=address,
                 count=count,
-                slave=self.counter_config.unit_id
+                unit=self.counter_config.unit_id
             )
             
             if result.isError():
-                logger.error(f"Modbus error reading registers {address}-{address+count-1}: {result}")
+                logger.error(f"Modbus error reading address {address}: {result}")
                 return None
-                
+            
             return result.registers
-
+            
         except Exception as e:
-            logger.error(f"Exception reading registers {address}-{address+count-1}: {e}")
+            logger.error(f"Error reading registers at address {address}: {e}")
             return None
 
-    def _parse_float_be(self, registers: List[int], start_index: int) -> float:
-        """Parse big-endian float from registers"""
-        if start_index + 1 >= len(registers):
+    def _parse_float_be(self, registers: List[int], offset: int) -> float:
+        """Parse big-endian float from two consecutive registers"""
+        if len(registers) < offset + 2:
             return 0.0
-            
-        # Combine two 16-bit registers into one 32-bit value (big-endian)
-        combined = (registers[start_index] << 16) | registers[start_index + 1]
         
-        # Convert to bytes and then to float
-        bytes_val = struct.pack('>I', combined)  # '>I' = big-endian unsigned int
-        float_val = struct.unpack('>f', bytes_val)[0]  # '>f' = big-endian float
+        # Combine two 16-bit registers into 32-bit value (big-endian)
+        raw_value = (registers[offset] << 16) | registers[offset + 1]
         
-        return float_val
+        # Convert to float using struct
+        try:
+            return struct.unpack('>f', raw_value.to_bytes(4, 'big'))[0]
+        except Exception as e:
+            logger.warning(f"Error parsing float at offset {offset}: {e}")
+            return 0.0
 
     def collect_data(self) -> Optional[Dict[str, Any]]:
-        """Collect data from IEM3155 meter"""
-        if not self.client:
-            logger.error("Client not connected")
-            return None
-
+        """
+        Collect data from IEM3255 meter following Node-RED flow logic
+        """
+        timestamp = datetime.now().isoformat()
+        has_error = False
+        
         try:
-            # Read data blocks as per IEM3155 register map
-            # Using same register map as IEM3255 since they're similar models
-            current_data = self._read_registers(2998, 8)     # Current measurements
-            voltage_data = self._read_registers(3018, 16)    # Voltage measurements  
-            power_data = self._read_registers(3052, 12)      # Power measurements
-            freq_data = self._read_registers(3108, 4)        # Frequency
-            energy_data = self._read_registers(45098, 4)     # Energy
+            # Read current data (address 2998, 8 registers)
+            current_data = self._read_registers(2998, 8)
+            if current_data is None:
+                has_error = True
+                current_data = [0] * 8
+            
+            # Read voltage data (address 3018, 16 registers)  
+            voltage_data = self._read_registers(3018, 16)
+            if voltage_data is None:
+                has_error = True
+                voltage_data = [0] * 16
+                
+            # Read power data (address 3052, 12 registers)
+            power_data = self._read_registers(3052, 12)
+            if power_data is None:
+                has_error = True
+                power_data = [0] * 12
+                
+            # Read frequency data (address 3108, 4 registers)
+            freq_data = self._read_registers(3108, 4)
+            if freq_data is None:
+                has_error = True
+                freq_data = [0] * 4
+                
+            # Read energy data (address 45098, 4 registers)
+            energy_data = self._read_registers(45098, 4)
+            if energy_data is None:
+                has_error = True
+                energy_data = [0] * 4
 
-            # Check if any read failed
-            if any(data is None for data in [current_data, voltage_data, power_data, freq_data, energy_data]):
-                error_msg = self.error_manager.process_error(True)
-                if error_msg:
-                    logger.warning(f"Modbus communication error: {error_msg}")
-                return None
+            # Process error through error manager
+            error_message = self.error_manager.process_error(has_error)
+            if error_message:
+                logger.warning(f"Error state changed: {error_message}")
 
-            # Reset error count on successful read
-            error_msg = self.error_manager.process_error(False)
-            if error_msg:
-                logger.info(f"Communication restored: {error_msg}")
-
-            # Parse and format data
-            return self._format_data(current_data, voltage_data, power_data, freq_data, energy_data)
-
+            # Parse data according to Node-RED buffer parsers
+            data = self._format_data(current_data, voltage_data, power_data, freq_data, energy_data, timestamp)
+            
+            return data
+            
         except Exception as e:
-            logger.error(f"Error collecting data from IEM3155: {e}")
-            error_msg = self.error_manager.process_error(True)
-            if error_msg:
-                logger.warning(f"Exception in data collection: {error_msg}")
+            logger.error(f"Error collecting data from IEM3255: {e}")
+            self.error_manager.process_error(True)
             return None
 
     def _format_data(self, current_data: List[int], voltage_data: List[int], 
                      power_data: List[int], freq_data: List[int], 
-                     energy_data: List[int]) -> Dict[str, Any]:
-        """Format collected data according to Node-RED format"""
-        
-        timestamp = datetime.now().isoformat()
+                     energy_data: List[int], timestamp: str) -> Dict[str, Any]:
+        """
+        Format data according to Node-RED IEM3255 Data Format function
+        """
         
         # Parse currents from current_data (floatbe at offsets 2, 6, 10)
         il1 = self._parse_float_be(current_data, 1)  # offset 2 in bytes = index 1 in registers
-        il2 = self._parse_float_be(current_data, 3)  # offset 6 in bytes = index 3 in registers
+        il2 = self._parse_float_be(current_data, 3)  # offset 6 in bytes = index 3 in registers  
         il3 = self._parse_float_be(current_data, 5)  # offset 10 in bytes = index 5 in registers
         
         # Parse voltages from voltage_data (floatbe at offsets 2, 6, 10, 18, 22, 26)
@@ -244,7 +265,7 @@ class IEM3155DataCollector:
         # Parse energy from energy_data (floatbe at offset 2)
         energy_active = self._parse_float_be(energy_data, 1)  # offset 2 in bytes = index 1
 
-        # Format according to Node-RED function (same format as IEM3255)
+        # Format according to Node-RED function
         formatted_data = {
             "companyID": self.counter_config.company_id,
             "ts": timestamp,
@@ -301,9 +322,9 @@ def main():
     """Main function for testing"""
     # Example configuration for testing
     counter_config = CounterConfiguration(
-        counter_id=137,
-        unit_id=20,
-        counter_name="L21 - Secadores Linhas 21 e 22",
+        counter_id=130,
+        unit_id=12,
+        counter_name="L21 - Bobinadora",
         company_id="TestCompany"
     )
     
@@ -313,10 +334,10 @@ def main():
         timeout=3.0
     )
     
-    collector = IEM3155DataCollector(counter_config, tcp_config, use_tcp=True)
+    collector = IEM3255DataCollector(counter_config, tcp_config, use_tcp=True)
     
     try:
-        logger.info("Starting IEM3155 data collection...")
+        logger.info("Starting IEM3255 data collection...")
         
         if not collector.connect():
             logger.error("Failed to connect to meter")
