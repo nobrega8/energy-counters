@@ -117,9 +117,9 @@ class DMG1DataCollector:
                 self.client = ModbusSerialClient(
                     port=self.connection_config.port,
                     baudrate=self.connection_config.baudrate,
-                    bytesize=self.connection_config.bytesize,
+                    bytesize=self.connection_config.data_bits,
                     parity=self.connection_config.parity,
-                    stopbits=self.connection_config.stopbits,
+                    stopbits=self.connection_config.stop_bits,
                     timeout=self.connection_config.timeout
                 )
 
@@ -161,119 +161,165 @@ class DMG1DataCollector:
             return None
 
     def collect_data(self) -> Optional[Dict[str, Any]]:
-        """Collect data from DMG1 meter"""
+        """Collect data from DMG1 meter following Node-RED flow pattern"""
         if not self.client:
             logger.error("Client not connected")
             return None
 
-        try:
-            # TODO: Define DMG1 specific register map
-            # This is a placeholder implementation - needs actual register map
-            # from complete Node-RED flow
-            
-            # Example register reads (to be updated with actual DMG1 registers)
-            voltage_data = self._read_registers(0, 6)        # Placeholder addresses
-            current_data = self._read_registers(10, 6)       # Placeholder addresses
-            power_data = self._read_registers(20, 8)         # Placeholder addresses
-            energy_data = self._read_registers(30, 4)        # Placeholder addresses
+        timestamp = datetime.now().isoformat()
 
-            # Check if any read failed
-            if any(data is None for data in [voltage_data, current_data, power_data, energy_data]):
-                error_msg = self.error_manager.process_error(True)
-                if error_msg:
-                    logger.warning(f"Modbus communication error: {error_msg}")
+        try:
+            # Read 1: Address 2, 24 registers (instantaneous data)
+            # Based on Node-RED flow: address=2, quantity=24
+            data01 = self._read_registers(2, 24)
+            if data01 is None:
+                self._process_communication_error()
                 return None
 
-            # Reset error count on successful read
+            # Read 2: Address 0x32 (50), 38 registers (frequency, equivalents, THD)
+            # Based on Node-RED flow: address=0x32, quantity=38
+            data02 = self._read_registers(0x32, 38)
+            if data02 is None:
+                self._process_communication_error()
+                return None
+
+            # Read 3: Address 6687, 10 registers (energies)
+            # Based on Node-RED flow: address=6687, quantity=10
+            data03 = self._read_registers(6687, 10)
+            if data03 is None:
+                self._process_communication_error()
+                return None
+
+            # Process communication success
             error_msg = self.error_manager.process_error(False)
             if error_msg:
-                logger.info(f"Communication restored: {error_msg}")
+                logger.info(f"Communication restored: {error_msg['message']}")
 
-            # Parse and format data
-            return self._format_data(voltage_data, current_data, power_data, energy_data)
+            # Format data according to Node-RED function
+            formatted_data = self._format_data(data01, data02, data03, timestamp)
+            return formatted_data
 
         except Exception as e:
             logger.error(f"Error collecting data from DMG1: {e}")
-            error_msg = self.error_manager.process_error(True)
-            if error_msg:
-                logger.warning(f"Exception in data collection: {error_msg}")
+            self._process_communication_error()
             return None
 
-    def _format_data(self, voltage_data: list, current_data: list, 
-                     power_data: list, energy_data: list) -> Dict[str, Any]:
-        """Format collected data according to Node-RED format"""
-        
-        timestamp = datetime.now().isoformat()
-        
-        # TODO: Parse actual register values according to DMG1 specifications
-        # This is a placeholder implementation
-        
-        # Placeholder values - to be updated with actual parsing
-        vl1 = voltage_data[0] if voltage_data else 0
-        vl2 = voltage_data[1] if voltage_data else 0
-        vl3 = voltage_data[2] if voltage_data else 0
-        
-        il1 = current_data[0] if current_data else 0
-        il2 = current_data[1] if current_data else 0
-        il3 = current_data[2] if current_data else 0
-        
-        p1 = power_data[0] if power_data else 0
-        p2 = power_data[1] if power_data else 0
-        p3 = power_data[2] if power_data else 0
-        
-        energy_active = energy_data[0] if energy_data else 0
+    def _process_communication_error(self):
+        """Process communication error"""
+        error_msg = self.error_manager.process_error(True)
+        if error_msg:
+            logger.warning(f"Communication error: {error_msg['message']}")
 
-        # Format according to standard format (to be adjusted based on actual DMG1 output)
-        formatted_data = {
+    def _format_data(self, data01: list, data02: list, data03: list, timestamp: str) -> Dict[str, Any]:
+        """
+        Format data according to Node-RED DMG1 configuration
+        Based on the buffer parsers in the Node-RED flow
+        """
+
+        def uint32_from_registers(high_reg: int, low_reg: int) -> int:
+            """Convert two 16-bit registers to uint32 big-endian value"""
+            return (high_reg << 16) + low_reg
+
+        def int32_from_registers(high_reg: int, low_reg: int) -> int:
+            """Convert two 16-bit registers to int32 big-endian value"""
+            value = (high_reg << 16) + low_reg
+            # Convert to signed int32
+            if value > 0x7FFFFFFF:
+                value -= 0x100000000
+            return value
+
+        return {
             "companyID": self.counter_config.company_id,
             "ts": timestamp,
             "counterID": str(self.counter_config.counter_id),
             "counterName": self.counter_config.counter_name,
-            
-            # Voltage measurements
-            "vl1": f"{vl1:.2f}",
-            "vl2": f"{vl2:.2f}",
-            "vl3": f"{vl3:.2f}",
-            
-            # Current measurements
-            "il1": f"{il1:.2f}",
-            "il2": f"{il2:.2f}",
-            "il3": f"{il3:.2f}",
-            
-            # Power measurements
-            "pl1": f"{p1:.2f}",
-            "pl2": f"{p2:.2f}",
-            "pl3": f"{p3:.2f}",
-            
-            # Energy measurement
-            "energyActive": f"{energy_active:.1f}",
-            
-            # TODO: Add other fields based on DMG1 specifications
+
+            # Instantaneous data (data01) - Read 1: Address 2, 24 registers
+            # L-N Voltages (V) - uint32be scale 0.01
+            "vl1": f"{uint32_from_registers(data01[0], data01[1]) * 0.01:.2f}",
+            "vl2": f"{uint32_from_registers(data01[2], data01[3]) * 0.01:.2f}",
+            "vl3": f"{uint32_from_registers(data01[4], data01[5]) * 0.01:.2f}",
+
+            # Currents (A) - uint32be scale 0.0001
+            "il1": f"{uint32_from_registers(data01[6], data01[7]) * 0.0001:.2f}",
+            "il2": f"{uint32_from_registers(data01[8], data01[9]) * 0.0001:.2f}",
+            "il3": f"{uint32_from_registers(data01[10], data01[11]) * 0.0001:.2f}",
+
+            # L-L Voltages (V) - uint32be scale 0.01
+            "vl12": f"{uint32_from_registers(data01[12], data01[13]) * 0.01:.2f}",
+            "vl23": f"{uint32_from_registers(data01[14], data01[15]) * 0.01:.2f}",
+            "vl31": f"{uint32_from_registers(data01[16], data01[17]) * 0.01:.2f}",
+
+            # Phase Powers (kW) - int32be scale 0.01
+            "pl1": f"{int32_from_registers(data01[18], data01[19]) * 0.01:.2f}",
+            "pl2": f"{int32_from_registers(data01[20], data01[21]) * 0.01:.2f}",
+            "pl3": f"{int32_from_registers(data01[22], data01[23]) * 0.01:.2f}",
+
+            # Frequency and equivalent data (data02) - Read 2: Address 0x32, 38 registers
+            # Frequency (Hz) - uint32be scale 0.01
+            "freq": f"{uint32_from_registers(data02[0], data02[1]) * 0.01:.2f}",
+
+            # Equivalent values
+            "veq": f"{uint32_from_registers(data02[2], data02[3]) * 0.01:.2f}",
+            "veql": f"{uint32_from_registers(data02[4], data02[5]) * 0.01:.2f}",
+            "ieq": f"{uint32_from_registers(data02[6], data02[7]) * 0.0001:.2f}",
+
+            # Equivalent Powers (kW/kVAr/kVA) - int32be/uint32be scale 0.01
+            "paeq": f"{int32_from_registers(data02[8], data02[9]) * 0.01:.2f}",
+            "qaeq": f"{int32_from_registers(data02[10], data02[11]) * 0.01:.2f}",
+            "saeq": f"{uint32_from_registers(data02[12], data02[13]) * 0.01:.2f}",
+            "pfeq": f"{uint32_from_registers(data02[14], data02[15]) * 0.0001:.2f}",
+
+            # Additional fields from Node-RED parser
+            "assN": f"{uint32_from_registers(data02[16], data02[17]) * 0.01:.2f}",
+            "assIn": f"{uint32_from_registers(data02[18], data02[19]) * 0.01:.2f}",
+            "iln": f"{uint32_from_registers(data02[20], data02[21]) * 0.01:.2f}",
+
+            # Voltage THD (%) - uint32be scale 0.01
+            "thdV1": f"{uint32_from_registers(data02[26], data02[27]) * 0.01:.2f}",
+            "thdV2": f"{uint32_from_registers(data02[28], data02[29]) * 0.01:.2f}",
+            "thdV3": f"{uint32_from_registers(data02[30], data02[31]) * 0.01:.2f}",
+
+            # Current THD (%) - uint32be scale 0.01
+            "thdIL1": f"{uint32_from_registers(data02[32], data02[33]) * 0.01:.2f}",
+            "thdIL2": f"{uint32_from_registers(data02[34], data02[35]) * 0.01:.2f}",
+            "thdIL3": f"{uint32_from_registers(data02[36], data02[37]) * 0.01:.2f}",
+
+            # Energies (data03) - Read 3: Address 6687, 10 registers - int32be scale 0.01
+            "energyActive": f"{int32_from_registers(data03[0], data03[1]) * 0.01:.1f}",
+            "energyReactive": f"{int32_from_registers(data03[4], data03[5]) * 0.01:.1f}",
+            "energyApparent": f"{int32_from_registers(data03[8], data03[9]) * 0.01:.1f}",
         }
-        
-        return formatted_data
 
 
 def main():
     """Main function for testing"""
-    # Example configuration for testing
+    # Example configuration for testing - based on Node-RED flow
     counter_config = CounterConfiguration(
-        counter_id=999,  # Placeholder ID for DMG1
-        unit_id=1,
-        counter_name="DMG1 Test Counter",
+        counter_id=14,  # From Node-RED flow
+        unit_id=51,     # From Node-RED flow: unitid = 51
+        counter_name="L06-Caixa 1",  # From Node-RED flow
         company_id="TestCompany"
     )
     
-    # DMG1 typically uses RTU
+    # DMG1 typically uses RTU but can also use TCP
     rtu_config = ModbusRTUConfiguration(
         port="/dev/ttyUSB0",
         baudrate=9600,
-        bytesize=8,
+        data_bits=8,
         parity='N',
-        stopbits=1,
+        stop_bits=1,
         timeout=3.0
     )
     
+    # Alternative TCP configuration (example)
+    tcp_config = ModbusTCPConfiguration(
+        host="172.16.5.12",  # Example IP from Node-RED flows
+        port=502,
+        timeout=4.0
+    )
+    
+    # For this example, use RTU (change use_tcp=True for TCP)
     collector = DMG1DataCollector(counter_config, rtu_config, use_tcp=False)
     
     try:
