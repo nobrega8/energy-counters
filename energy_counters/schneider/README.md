@@ -7,8 +7,26 @@ This folder contains implementations for Schneider Electric energy meters.
 ### IEM3255 Energy Meter
 
 - **Status**: ✅ Implemented
+- **Counter ID**: 130
+- **Unit ID**: 12
+- **Counter Name**: "L21 - Bobinadora"
 - **Description**: Interface for the Schneider Electric IEM3255 energy meter
 - **Based on**: Node-RED flow from issue #21
+- **Features**:
+  - Modbus TCP/RTU communication support
+  - Error threshold of 6 consecutive failures
+  - Multiple register block data collection
+  - Standardized output format
+  - Professional error handling and logging
+
+### IEM3155 Energy Meter
+
+- **Status**: ✅ Implemented
+- **Counter ID**: 137
+- **Unit ID**: 20
+- **Counter Name**: "L21 - Secadores Linhas 21 e 22"
+- **Description**: Interface for the Schneider Electric IEM3155 energy meter (similar to IEM3255)
+- **Based on**: Same register map as IEM3255
 - **Features**:
   - Modbus TCP/RTU communication support
   - Error threshold of 6 consecutive failures
@@ -19,7 +37,8 @@ This folder contains implementations for Schneider Electric energy meters.
 #### Communication Parameters
 
 - **Error Threshold**: 6 consecutive failures before declaring communication error
-- **Default Unit IDs**: 12 (Counter #130), 20 (Counter #137) 
+- **IEM3255 (Counter #130)**: Unit ID 12, "L21 - Bobinadora"
+- **IEM3155 (Counter #137)**: Unit ID 20, "L21 - Secadores Linhas 21 e 22" 
 - **Preferred Protocol**: Modbus TCP (port 502)
 - **Fallback Protocol**: Modbus RTU
 - **Default Host**: 172.16.5.9 (as per Node-RED implementation)
@@ -85,7 +104,9 @@ This folder contains implementations for Schneider Electric energy meters.
 
 **Note**: Some values are hardcoded to "0.0" as per the original Node-RED implementation.
 
-#### Usage Example
+#### Usage Examples
+
+##### IEM3255 (Counter ID 130)
 
 ```python
 from energy_counters.schneider import IEM3255DataCollector
@@ -114,17 +135,36 @@ print(data)
 collector.disconnect()
 ```
 
+##### IEM3155 (Counter ID 137)
+
+```python
+from energy_counters.schneider import IEM3155DataCollector
+from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
+
+# Configure counter
+counter_config = CounterConfiguration(
+    counter_id=137,
+    unit_id=20,
+    counter_name="L21 - Secadores Linhas 21 e 22",
+    company_id="YourCompany"
+)
+
+# Configure TCP connection
+tcp_config = ModbusTCPConfiguration(
+    host="172.16.5.9",
+    port=502,
+    timeout=3.0
+)
+
+# Create collector and collect data
+collector = IEM3155DataCollector(counter_config, tcp_config, use_tcp=True)
+collector.connect()
+data = collector.collect_data()
+print(data)
+collector.disconnect()
+```
+
 ## Planned Counters
-
-### IEM3155 Energy Meter
-
-- **Status**: Not yet implemented
-- **Description**: Will provide interface for the Schneider Electric IEM3155 energy meter
-- **Features**: To be implemented including:
-  - Configuration classes
-  - Communication protocol setup  
-  - Data collection functions
-  - Error handling
 
 ### IEM3250 Energy Meter
 
@@ -138,7 +178,7 @@ collector.disconnect()
 
 ## Implementation Status
 
-The IEM3255 counter is fully implemented and ready for use. The remaining counters are in planning phase. The implementation follows the same patterns established by other counter modules in this library:
+Both IEM3255 and IEM3155 counters are fully implemented and ready for use. The remaining counters are in planning phase. The implementation follows the same patterns established by other counter modules in this library:
 
 - Modbus TCP/RTU communication support
 - Configurable error thresholds

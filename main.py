@@ -77,9 +77,9 @@ def main():
     print("  from energy_counters.carlo_gavazzi import em530")
     print("  from energy_counters.contrel import ud3h")
     print("  from energy_counters.diris import a10")
-    print("  from energy_counters.lovato import dmg210, dmg6")
+    print("  from energy_counters.lovato import dmg210, dmg6, dmg1")
     print("  from energy_counters.redz import lkm144")
-    print("  from energy_counters.schneider import iem3255")
+    print("  from energy_counters.schneider import iem3255, iem3155")
 
 
 if __name__ == "__main__":
