@@ -8,6 +8,103 @@ This folder contains implementations for Lovato energy meters.
 
 ## Implemented Counters
 
+### DMG1 Energy Meter
+
+The DMG1 is a three-phase energy meter with comprehensive measurement capabilities.
+This implementation is based on the Node-RED flow specification provided in issue #23.
+
+#### Modbus Register Map
+
+The DMG1 implementation reads three separate register blocks:
+
+##### Instantaneous Data Block (Address: 2, Registers: 24)
+
+| Register Address | Register Count | Data Type | Scale Factor | Description |
+|------------------|----------------|-----------|--------------|-------------|
+| 2-3 | 2 | uint32be | 0.01 | Voltage L1-N (V) |
+| 4-5 | 2 | uint32be | 0.01 | Voltage L2-N (V) |
+| 6-7 | 2 | uint32be | 0.01 | Voltage L3-N (V) |
+| 8-9 | 2 | uint32be | 0.0001 | Current L1 (A) |
+| 10-11 | 2 | uint32be | 0.0001 | Current L2 (A) |
+| 12-13 | 2 | uint32be | 0.0001 | Current L3 (A) |
+| 14-15 | 2 | uint32be | 0.01 | Voltage L1-L2 (V) |
+| 16-17 | 2 | uint32be | 0.01 | Voltage L2-L3 (V) |
+| 18-19 | 2 | uint32be | 0.01 | Voltage L3-L1 (V) |
+| 20-21 | 2 | int32be | 0.01 | Active Power L1 (kW) |
+| 22-23 | 2 | int32be | 0.01 | Active Power L2 (kW) |
+| 24-25 | 2 | int32be | 0.01 | Active Power L3 (kW) |
+
+##### Frequency and Equivalent Data Block (Address: 50/0x32, Registers: 38)
+
+| Register Offset | Register Count | Data Type | Scale Factor | Description |
+|-----------------|----------------|-----------|--------------|-------------|
+| 0-1 | 2 | uint32be | 0.01 | Frequency (Hz) |
+| 2-3 | 2 | uint32be | 0.01 | Voltage Equivalent (V) |
+| 4-5 | 2 | uint32be | 0.01 | Voltage Equivalent L-L (V) |
+| 6-7 | 2 | uint32be | 0.0001 | Current Equivalent (A) |
+| 8-9 | 2 | int32be | 0.01 | Active Power Equivalent (kW) |
+| 10-11 | 2 | int32be | 0.01 | Reactive Power Equivalent (kVAr) |
+| 12-13 | 2 | uint32be | 0.01 | Apparent Power Equivalent (kVA) |
+| 14-15 | 2 | uint32be | 0.0001 | Power Factor Equivalent |
+| 26-27 | 2 | uint32be | 0.01 | Voltage THD L1 (%) |
+| 28-29 | 2 | uint32be | 0.01 | Voltage THD L2 (%) |
+| 30-31 | 2 | uint32be | 0.01 | Voltage THD L3 (%) |
+| 32-33 | 2 | uint32be | 0.01 | Current THD L1 (%) |
+| 34-35 | 2 | uint32be | 0.01 | Current THD L2 (%) |
+| 36-37 | 2 | uint32be | 0.01 | Current THD L3 (%) |
+
+##### Energy Data Block (Address: 6687, Registers: 10)
+
+| Register Offset | Register Count | Data Type | Scale Factor | Description |
+|-----------------|----------------|-----------|--------------|-------------|
+| 0-1 | 2 | int32be | 0.01 | Active Energy (kWh) |
+| 4-5 | 2 | int32be | 0.01 | Reactive Energy (kVArh) |
+| 8-9 | 2 | int32be | 0.01 | Apparent Energy (kVAh) |
+
+#### Communication Parameters
+
+- **Error Threshold**: 6 consecutive failures before declaring communication error
+- **Preferred Protocol**: Both TCP and RTU supported
+- **Data Format**: Big-endian for multi-register values
+- **Default Unit ID**: 51 (from Node-RED flow)
+
+#### Usage Example
+
+```python
+from energy_counters.lovato import DMG1DataCollector
+from energy_counters.common import CounterConfiguration, ModbusTCPConfiguration
+
+# Configure the counter
+counter_config = CounterConfiguration(
+    counter_id=14,
+    unit_id=51,  # From Node-RED flow
+    counter_name="L06-Caixa 1",
+    company_id="MyCompany"
+)
+
+# Configure Modbus TCP connection
+tcp_config = ModbusTCPConfiguration(
+    host="172.16.5.12",
+    port=502
+)
+
+# Create collector
+collector = DMG1DataCollector(counter_config, tcp_config, use_tcp=True)
+
+try:
+    # Connect and collect data
+    if collector.connect():
+        data = collector.collect_data()
+        if data:
+            print(f"Voltage L1: {data['vl1']}V")
+            print(f"Current L1: {data['il1']}A")
+            print(f"Active Power L1: {data['pl1']}kW")
+            print(f"Frequency: {data['freq']}Hz")
+            print(f"Active Energy: {data['energyActive']}kWh")
+finally:
+    collector.disconnect()
+```
+
 ### DMG6 Energy Meter
 
 The DMG6 is a three-phase energy meter with comprehensive measurement capabilities.
@@ -191,6 +288,64 @@ if collector.connect():
     collector.disconnect()
 ```
 
+### DMG800 Energy Meter
+
+The DMG800 is a three-phase energy meter with comprehensive measurement capabilities.
+This implementation follows the same register structure as DMG1 but with potential differences in available measurements.
+
+#### Modbus Register Map
+
+The DMG800 implementation uses the same register blocks as DMG1:
+
+- **Instantaneous Data Block**: Address 2, 24 registers
+- **Frequency and Equivalent Data Block**: Address 50/0x32, 38 registers  
+- **Energy Data Block**: Address 6687, 10 registers
+
+Refer to DMG1 documentation above for detailed register mapping.
+
+#### Communication Parameters
+
+- **Error Threshold**: 6 consecutive failures before declaring communication error
+- **Preferred Protocol**: Both TCP and RTU supported
+- **Data Format**: Big-endian for multi-register values
+
+#### Usage Example
+
+```python
+from energy_counters.lovato import DMG800DataCollector
+from energy_counters.common import CounterConfiguration, ModbusRTUConfiguration
+
+# Configure the counter
+counter_config = CounterConfiguration(
+    counter_id=800,
+    unit_id=1,
+    counter_name="DMG800 Counter",
+    company_id="MyCompany"
+)
+
+# Configure Modbus RTU connection
+rtu_config = ModbusRTUConfiguration(
+    port="/dev/ttyUSB0",
+    baudrate=9600
+)
+
+# Create collector
+collector = DMG800DataCollector(counter_config, rtu_config, use_tcp=False)
+
+try:
+    # Connect and collect data
+    if collector.connect():
+        data = collector.collect_data()
+        if data:
+            print(f"Voltage L1: {data['vl1']}V")
+            print(f"Current L1: {data['il1']}A")
+            print(f"Active Power L1: {data['pl1']}kW")
+            print(f"Frequency: {data['freq']}Hz")
+            print(f"Active Energy: {data['energyActive']}kWh")
+finally:
+    collector.disconnect()
+```
+
 ## Output Data Fields
 
 ### DMG6 Collector Output
@@ -223,6 +378,86 @@ The DMG6 collector returns a dictionary with the following fields:
 - `activeEnergy`: Active energy (kWh)
 - `reactiveEnergy`: Reactive energy (kVArh)
 - `apparentEnergy`: Apparent energy (kVAh)
+
+#### Power Quality
+- `thdIL1`, `thdIL2`, `thdIL3`: Current THD per phase (%)
+- `thdV1`, `thdV2`, `thdV3`: Voltage THD per phase (%)
+
+### DMG1 Collector Output
+
+The DMG1 collector returns a dictionary with the following fields:
+
+#### Basic Information
+- `companyID`: Company identifier
+- `ts`: ISO timestamp of the reading
+- `counterID`: Counter identifier
+- `counterName`: Counter name
+
+#### Electrical Measurements
+- `vl1`, `vl2`, `vl3`: Line-to-neutral voltages (V)
+- `vl12`, `vl23`, `vl31`: Line-to-line voltages (V)
+- `il1`, `il2`, `il3`: Line currents (A)
+- `pl1`, `pl2`, `pl3`: Phase active powers (kW)
+- `freq`: System frequency (Hz)
+
+#### Equivalent Values
+- `veq`: Voltage equivalent (V)
+- `veql`: Voltage equivalent L-L (V)
+- `ieq`: Current equivalent (A)
+- `paeq`: Active power equivalent (kW)
+- `qaeq`: Reactive power equivalent (kVAr)
+- `saeq`: Apparent power equivalent (kVA)
+- `pfeq`: Power factor equivalent
+
+#### Additional Values (DMG1 specific)
+- `assN`: Asymmetry N (V)
+- `assIn`: Asymmetry In (A)
+- `iln`: Current neutral (A)
+
+#### Energy Measurements
+- `energyActive`: Active energy (kWh)
+- `energyReactive`: Reactive energy (kVArh)
+- `energyApparent`: Apparent energy (kVAh)
+
+#### Power Quality
+- `thdIL1`, `thdIL2`, `thdIL3`: Current THD per phase (%)
+- `thdV1`, `thdV2`, `thdV3`: Voltage THD per phase (%)
+
+### DMG800 Collector Output
+
+The DMG800 collector returns a dictionary with the same structure as DMG1:
+
+#### Basic Information
+- `companyID`: Company identifier
+- `ts`: ISO timestamp of the reading
+- `counterID`: Counter identifier
+- `counterName`: Counter name
+
+#### Electrical Measurements
+- `vl1`, `vl2`, `vl3`: Line-to-neutral voltages (V)
+- `vl12`, `vl23`, `vl31`: Line-to-line voltages (V)
+- `il1`, `il2`, `il3`: Line currents (A)
+- `pl1`, `pl2`, `pl3`: Phase active powers (kW)
+- `freq`: System frequency (Hz)
+
+#### Equivalent Values
+- `veq`: Voltage equivalent (V)
+- `veql`: Voltage equivalent L-L (V)
+- `ieq`: Current equivalent (A)
+- `paeq`: Active power equivalent (kW)
+- `qaeq`: Reactive power equivalent (kVAr)
+- `saeq`: Apparent power equivalent (kVA)
+- `pfeq`: Power factor equivalent
+
+#### Additional Values
+- `assN`: Asymmetry N (V)
+- `assIn`: Asymmetry In (A)
+- `iln`: Current neutral (A)
+
+#### Energy Measurements
+- `energyActive`: Active energy (kWh)
+- `energyReactive`: Reactive energy (kVArh)
+- `energyApparent`: Apparent energy (kVAh)
 
 #### Power Quality
 - `thdIL1`, `thdIL2`, `thdIL3`: Current THD per phase (%)
@@ -311,8 +546,3 @@ if collector.connect():
     collector.disconnect()
 ```
 
-## Planned Counters
-
-### DMG800 Energy Meter
-- **Status**: Not yet implemented
-- **Description**: Will provide interface for the Lovato DMG800 energy meter
